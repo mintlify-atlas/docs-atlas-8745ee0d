@@ -1,0 +1,245 @@
+---
+title: Installation
+description: Complete installation guide for FairMatch AI backend and frontend
+---
+
+This guide walks you through installing FairMatch AI's backend and frontend components separately, giving you full control over the setup process.
+
+## System requirements
+
+- **Node.js**: v18 or higher
+- **Python**: 3.9 or higher
+- **Database**: Supabase instance (PostgreSQL)
+- **Operating System**: Linux, macOS, or Windows with WSL
+
+## Backend installation
+
+The backend is built with FastAPI and powers the AI evaluation engine.
+
+<Steps>
+  <Step title="Navigate to the backend directory">
+    ```bash
+    cd backend
+    ```
+  </Step>
+
+  <Step title="Create a virtual environment">
+    Create and activate a Python virtual environment:
+
+    ```bash
+    python3 -m venv venv
+    ```
+
+    Activate the virtual environment:
+
+    ```bash
+    # On Linux/macOS
+    source venv/bin/activate
+
+    # On Windows
+    venv\Scripts\activate
+    ```
+  </Step>
+
+  <Step title="Install Python dependencies">
+    Install all required packages from `requirements.txt`:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    Key dependencies include:
+    - **FastAPI**: Web framework for the API
+    - **Uvicorn**: ASGI server
+    - **Supabase**: Database client
+    - **Zyndai-agent**: AI agent orchestration
+    - **LangChain**: LLM integration
+    - **PyMuPDF**: PDF parsing for resumes
+    - **Passlib**: Password hashing with bcrypt
+    - **Pandas**: Data processing for bulk uploads
+  </Step>
+
+  <Step title="Set up environment variables">
+    Create a `.env` file in the `backend` directory:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    See the [configuration guide](/configuration) for details on setting up environment variables.
+  </Step>
+
+  <Step title="Start the backend server">
+    Launch the FastAPI server with hot reload:
+
+    ```bash
+    python -m uvicorn main:app --reload --port 8000
+    ```
+
+    For production deployments:
+
+    ```bash
+    python -m uvicorn main:app --host 0.0.0.0 --port 8000
+    ```
+
+    The API will be available at `http://localhost:8000`
+  </Step>
+
+  <Step title="Verify the installation">
+    Test the backend by visiting:
+
+    - API root: http://localhost:8000
+    - Interactive API docs: http://localhost:8000/docs
+    - Alternative docs: http://localhost:8000/redoc
+  </Step>
+</Steps>
+
+## Frontend installation
+
+The frontend is a React application built with Vite and TypeScript.
+
+<Steps>
+  <Step title="Navigate to the frontend directory">
+    ```bash
+    cd frontend
+    ```
+  </Step>
+
+  <Step title="Install Node.js dependencies">
+    Install all required packages:
+
+    <CodeGroup>
+    ```bash npm
+    npm install
+    ```
+
+    ```bash yarn
+    yarn install
+    ```
+
+    ```bash pnpm
+    pnpm install
+    ```
+    </CodeGroup>
+
+    Key dependencies include:
+    - **React 19**: UI framework
+    - **Vite**: Build tool and dev server
+    - **TypeScript**: Type safety
+    - **Tailwind CSS**: Styling framework
+    - **React Router**: Client-side routing
+    - **Framer Motion**: Animations
+    - **Recharts**: Data visualization
+    - **Lucide React**: Icon library
+  </Step>
+
+  <Step title="Start the development server">
+    Launch the Vite development server:
+
+    <CodeGroup>
+    ```bash npm
+    npm run dev
+    ```
+
+    ```bash yarn
+    yarn dev
+    ```
+
+    ```bash pnpm
+    pnpm dev
+    ```
+    </CodeGroup>
+
+    The application will be available at `http://localhost:5173`
+  </Step>
+
+  <Step title="Build for production">
+    When you're ready to deploy, create a production build:
+
+    <CodeGroup>
+    ```bash npm
+    npm run build
+    ```
+
+    ```bash yarn
+    yarn build
+    ```
+
+    ```bash pnpm
+    pnpm build
+    ```
+    </CodeGroup>
+
+    The optimized files will be in the `dist` directory.
+  </Step>
+</Steps>
+
+## AI agents installation (optional)
+
+FairMatch AI includes specialized AI agents for enhanced evaluation capabilities.
+
+<Steps>
+  <Step title="Ensure backend dependencies are installed">
+    The AI agents use the same Python environment as the backend. Make sure you've completed the backend installation steps.
+  </Step>
+
+  <Step title="Start individual agents">
+    From the `backend` directory with your virtual environment activated, start each agent in a separate terminal:
+
+    ```bash
+    # GitHub verification agent
+    python agents/github_agent.py
+
+    # Interview evaluation agent
+    python agents/interview_agent.py
+
+    # Integrity and fraud detection agent
+    python agents/integrity_agent.py
+
+    # Resume analysis agent
+    python agents/resume_agent.py
+    ```
+  </Step>
+
+  <Step title="Use the start script (alternative)">
+    Alternatively, use the provided script to start all agents and services:
+
+    ```bash
+    chmod +x start.sh
+    ./start.sh
+    ```
+
+    This starts all agents in the background and logs their output to separate files.
+  </Step>
+</Steps>
+
+## Verifying your installation
+
+Once both the backend and frontend are running, verify your installation:
+
+1. **Frontend**: Visit http://localhost:5173 and ensure the UI loads
+2. **Backend API**: Visit http://localhost:8000/docs and test the API endpoints
+3. **Database connection**: Check the backend logs for successful Supabase connection
+4. **AI agents** (if running): Check agent logs for successful registration with Zynd
+
+## Troubleshooting
+
+### Backend issues
+
+- **Import errors**: Ensure your virtual environment is activated and all dependencies are installed
+- **Port already in use**: Change the port with `--port 8001` or stop the process using port 8000
+- **Database connection**: Verify your Supabase credentials in the `.env` file
+
+### Frontend issues
+
+- **Module not found**: Delete `node_modules` and reinstall dependencies
+- **Port already in use**: Vite will automatically suggest an alternative port
+- **Build errors**: Ensure you're using Node.js v18 or higher
+
+## Next steps
+
+With FairMatch AI installed, continue to:
+
+- [Configure your environment variables](/configuration)
+- Learn about the application features
+- Set up your first job listing

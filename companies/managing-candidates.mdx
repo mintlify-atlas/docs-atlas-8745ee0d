@@ -1,0 +1,153 @@
+---
+title: Managing candidate applications
+description: Add candidates to job postings through multiple import methods
+---
+
+FairMatch AI supports multiple ways to add candidates to your job postings, from bulk imports to manual entry.
+
+## Add candidates to a job
+
+Before adding candidates, ensure you have selected a job from the dropdown menu in the top navigation. The "Candidate Cohort" panel will appear on the left side of your dashboard.
+
+### Upload CSV or Excel files
+
+Import multiple candidates at once from structured data files.
+
+<Steps>
+  <Step title="Prepare your candidate file">
+    Create a CSV or XLSX file with candidate information. Your file can use flexible column headers:
+    
+    **Supported column names:**
+    - Name / name
+    - Email / email / mail
+    - Skills / skill / technique / techinque / technologies
+    - Experience / exp / years / yrs
+    - GitHub / github
+    - LinkedIn / linkedin
+    - Resume / cv
+    - Domain / role / position / title / field
+    - Projects / project
+    
+    <Tip>
+      For skills, use comma or semicolon-separated values in a single cell (e.g., "Python, React, Docker").
+    </Tip>
+  </Step>
+  
+  <Step title="Click Upload CSV / XLSX">
+    In the Candidate Cohort panel, click the **Upload CSV / XLSX** button. This will open your file browser.
+  </Step>
+  
+  <Step title="Select your file">
+    Choose your .csv or .xlsx file. You can also select multiple PDF resume files to upload alongside your data file.
+    
+    <Note>
+      When uploading PDFs with your data file, ensure the data file includes a column referencing the PDF filename.
+    </Note>
+  </Step>
+  
+  <Step title="Review the import preview">
+    A preview modal will appear showing all candidates to be imported. Review the parsed data:
+    - Candidate names
+    - Skills or domain
+    - GitHub links
+    - Import status
+  </Step>
+  
+  <Step title="Confirm import">
+    Click the **Confirm Import** button at the bottom of the preview modal. The candidates will be added to your job posting.
+    
+    The modal will close automatically after successful import.
+  </Step>
+</Steps>
+
+### Manual candidate entry
+
+Add individual candidates through a form interface.
+
+<Steps>
+  <Step title="Open manual add form">
+    In the Candidate Cohort panel, click the **Manual Add Candidate** button.
+  </Step>
+  
+  <Step title="Fill in candidate details">
+    Enter the candidate information in the form fields:
+    - Name (required)
+    - Email (required)
+    - Skills (comma-separated)
+    - Experience (years)
+    - Projects description
+    - GitHub link
+    - Resume text
+  </Step>
+  
+  <Step title="Submit the form">
+    Click the submit button to add the candidate. The form will close and the candidate will appear in your cohort count.
+  </Step>
+</Steps>
+
+### Load demo dataset
+
+Quickly test the platform with sample candidates.
+
+Click **Load Demo Dataset** in the Candidate Cohort panel. This will add three pre-configured candidates:
+- Alice Hacker (Senior, 5 years experience)
+- Bob Junior (Entry level, 1 year experience)
+- Charlie Senior (8 years Java/Spring experience)
+
+<Warning>
+  The demo dataset is for testing purposes only. These candidates contain fictional data.
+</Warning>
+
+## Enrich candidate data
+
+Automatically enhance candidate profiles with GitHub information.
+
+### GitHub enrichment
+
+After adding candidates with GitHub links, you can enrich their profiles:
+
+<Steps>
+  <Step title="Ensure candidates have GitHub links">
+    Verify that your imported candidates include valid GitHub profile URLs.
+  </Step>
+  
+  <Step title="Click Enrich from GitHub">
+    In the Candidate Cohort panel, click the **Enrich from GitHub** button (appears after candidates are added).
+    
+    The button will show "Enriching from GitHub..." while processing.
+  </Step>
+  
+  <Step title="Review enrichment results">
+    After completion, an alert will display how many candidates were successfully enriched (e.g., "✅ Enriched 8 of 10 candidates from GitHub!").
+  </Step>
+</Steps>
+
+GitHub enrichment automatically updates:
+- Email addresses (from GitHub profile)
+- Experience years (calculated from account age)
+- Project descriptions (from top 5 repositories)
+- Bio information (added to resume text)
+
+<Tip>
+  Run enrichment before evaluating candidates to improve AI scoring accuracy with additional data.
+</Tip>
+
+## View candidate count
+
+The Candidate Cohort panel displays your current candidate count:
+```
+Candidates imported: 15
+```
+
+This counter updates automatically when you add or import candidates.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Running evaluations" icon="sparkles" href="/companies/running-evaluations">
+    Score your candidates with AI evaluation
+  </Card>
+  <Card title="Blind review mode" icon="eye-slash" href="/companies/blind-review-mode">
+    Enable anonymous candidate review
+  </Card>
+</CardGroup>

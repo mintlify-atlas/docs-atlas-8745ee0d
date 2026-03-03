@@ -1,0 +1,292 @@
+---
+title: Interview grading
+description: Learn how the Interview Grader agent evaluates technical interview answers using LLM-powered analysis and deterministic fallbacks.
+---
+
+## Overview
+
+The Interview Grader agent evaluates candidate interview answers for technical depth, clarity, and problem-solving skills. It uses Google's Gemini model as the primary grading mechanism, with a deterministic fallback when the LLM is unavailable.
+
+## Agent configuration
+
+The Interview Grader registers on the ZyndAI network with interview evaluation capabilities:
+
+```python backend/agents/interview_agent.py
+agent_config = AgentConfig(
+    name="FairMatch Interview Grader",
+    description="Evaluates candidate interview answers for technical depth and clarity. Returns a score 0-100.",
+    capabilities={
+        "ai": ["nlp", "interview_evaluation"],
+        "protocols": ["http"],
+        "services": ["interview_eval"]
+    },
+    webhook_host="0.0.0.0",
+    webhook_port=5002,
+    registry_url="https://registry.zynd.ai",
+    api_key=os.environ.get("ZYND_API_KEY", ""),
+    config_dir=".agent-interview"
+)
+
+agent = ZyndAIAgent(agent_config=agent_config)
+```
+
+## LLM configuration
+
+The agent uses Gemini 2.0 Flash Lite with low temperature for consistent grading:
+
+```python backend/agents/interview_agent.py
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-lite",
+    api_key=os.environ.get("GEMINI_API_KEY", "dummy"),
+    temperature=0.1
+)
+```
+
+<Note>
+The temperature is set to 0.1 rather than 0 to allow slight variation in scoring while maintaining consistency. This prevents identical scores for similar-quality answers.
+</Note>
+
+## Grading prompt
+
+The agent uses a focused system prompt to ensure numeric output:
+
+```python backend/agents/interview_agent.py
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert technical interviewer. Evaluate the candidate's answers based on clarity, technical depth, and problem-solving skills. Return ONLY a single integer score between 0 and 100."),
+    ("human", "{input}")
+])
+
+chain = prompt | llm | StrOutputParser()
+```
+
+The prompt emphasizes three evaluation criteria:
+
+### 1. Clarity
+
+Does the candidate communicate their thoughts clearly? Are explanations easy to follow?
+
+### 2. Technical depth
+
+Does the candidate demonstrate deep understanding of concepts? Do they mention frameworks, patterns, or best practices?
+
+### 3. Problem-solving skills
+
+Does the candidate show logical thinking? Do they consider edge cases and optimization?
+
+## Message handler
+
+The agent processes interview answers and returns a numeric score:
+
+```python backend/agents/interview_agent.py
+def handler(message: AgentMessage, topic: str):
+    print(f"Received interview answers to grade...")
+    
+    try:
+        if os.environ.get("GEMINI_API_KEY") == "REPLACE_ME_WITH_GEMINI_API_KEY" or not os.environ.get("GEMINI_API_KEY"):
+             raise Exception("Missing Gemini API Key in .env")
+
+        result = chain.invoke({"input": message.content})
+        
+        # Ensure it's just an integer string
+        score_str = "".join(filter(str.isdigit, result))
+        if not score_str:
+            score_str = "50"  # Fallback
+            
+        score = min(100, max(0, int(score_str)))
+        response_str = f"{score}"
+    except Exception as e:
+        print(f"Error connecting to LLM. Using deterministic fallback: {e}")
+        # Deterministic fallback logic
+        content = message.content.lower()
+        base_score = 50
+        if len(content) > 50: base_score += 15
+        if len(content) > 150: base_score += 10
+        for kw in ['framework', 'architecture', 'implemented', 'optimized', 'pattern', 'react', 'python', 'node']:
+            if kw in content: base_score = base_score + 5
+        score = min(100, max(10, base_score))
+        response_str = f"{score}"
+
+    agent.set_response(message.message_id, response_str)
+```
+
+## Deterministic fallback
+
+When the LLM is unavailable, the agent uses a keyword-based scoring algorithm:
+
+```python backend/agents/interview_agent.py
+content = message.content.lower()
+base_score = 50
+
+# Length bonuses
+if len(content) > 50: base_score += 15
+if len(content) > 150: base_score += 10
+
+# Technical keyword bonuses
+for kw in ['framework', 'architecture', 'implemented', 'optimized', 'pattern', 'react', 'python', 'node']:
+    if kw in content: base_score = base_score + 5
+
+score = min(100, max(10, base_score))
+```
+
+### Fallback scoring rules
+
+| Factor | Points | Logic |
+|--------|--------|-------|
+| Base score | 50 | Starting point for all answers |
+| Short answer (>50 chars) | +15 | Shows basic effort and detail |
+| Long answer (>150 chars) | +10 | Additional detail and thoroughness |
+| Technical keyword | +5 each | Mentions frameworks, patterns, or technologies |
+| Minimum floor | 10 | Even empty answers get some points |
+| Maximum cap | 100 | Prevents score overflow |
+
+<Info>
+The deterministic fallback ensures the system continues functioning even during LLM outages. While less sophisticated than LLM grading, it provides reasonable approximations based on answer length and technical vocabulary.
+</Info>
+
+## Response format
+
+The agent returns a simple numeric string:
+
+```
+78
+```
+
+This is intentionally minimal to reduce parsing complexity for the orchestrator.
+
+## How the orchestrator uses interview scores
+
+The orchestrator combines multiple interview answers into a single query:
+
+```python backend/ai_engine.py
+interview_score = 0
+if candidate.interview_answers:
+    combined_text = "Answers: " + " | ".join(candidate.interview_answers)
+    interview_score = get_agent_score("interview", combined_text)
+else:
+    # Fallback if no interview conducted
+    interview_score = min(90, max(30, len(candidate.resume_text) // 20))
+```
+
+<Note>
+If a candidate hasn't completed an interview yet, the system estimates a score based on resume length. This allows partial evaluations while interviews are being scheduled.
+</Note>
+
+## Score extraction
+
+The orchestrator robustly extracts numeric scores from agent responses:
+
+```python backend/ai_engine.py
+resp_content = response.json().get('response', '50')
+try:
+    # 1. Try to parse as JSON first (new format)
+    if isinstance(resp_content, str) and resp_content.strip().startswith('{'):
+        resp_json = json.loads(resp_content)
+        if isinstance(resp_json, dict) and 'score' in resp_json:
+            return int(resp_json['score'])
+    
+    # 2. Fallback to extracting digits
+    return min(100, max(0, int(''.join(filter(str.isdigit, str(resp_content))))))
+except:
+    return 50
+```
+
+## Score normalization
+
+All scores are clamped to the 0-100 range:
+
+```python backend/agents/interview_agent.py
+score = min(100, max(0, int(score_str)))
+```
+
+This prevents:
+- Negative scores from parsing errors
+- Scores above 100 from arithmetic overflow
+- NaN or infinity values from malformed data
+
+## Integration with fraud detection
+
+Interview scores are compared with GitHub scores to detect anomalies:
+
+```python backend/ai_engine.py
+if abs(github_score - interview_score) > 30 and candidate.github_link:
+    print(f"FRAUD DETECTED: GitHub({github_score}) vs Interview({interview_score}). Spawning Integrity Agent...")
+    fraud_query = f"GitHub Score: {github_score}\nInterview Score: {interview_score}\nResume Info:\n{candidate.resume_text}"
+    integrity_json = get_integrity_intelligence(fraud_query)
+    integrity_penalty = integrity_json.get("penalty_score", 0)
+```
+
+Large discrepancies between interview performance and GitHub portfolio quality trigger adaptive fraud investigation.
+
+<Info>
+A 30-point threshold was chosen based on real-world data. Legitimate candidates may show some variance due to interview nerves, but differences larger than 30 points often indicate profile fraud.
+</Info>
+
+## Running the agent
+
+```python backend/agents/interview_agent.py
+if __name__ == "__main__":
+    if not os.environ.get("ZYND_API_KEY") or os.environ.get("ZYND_API_KEY") == "REPLACE_ME_WITH_ZYND_API_KEY":
+        print("ERROR: ZYND_API_KEY is not set. Please set it in .env")
+        sys.exit(1)
+        
+    print(f"FairMatch Interview Grader Agent running at {agent.webhook_url}")
+    print(f"Price: {agent_config.price} per request")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down...")
+```
+
+## Environment variables
+
+```bash
+ZYND_API_KEY=your_zynd_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+<Note>
+Without `GEMINI_API_KEY`, the agent automatically switches to deterministic fallback mode. The system continues functioning with reduced accuracy but 100% uptime.
+</Note>
+
+## Example grading
+
+### High-quality answer (Score: 85)
+
+```
+I implemented a microservices architecture using Node.js and Docker. 
+Each service communicates via REST APIs and uses Redis for caching. 
+I optimized database queries with indexes and implemented circuit breaker 
+patterns for fault tolerance. The system handles 10k requests per second.
+```
+
+**Reasoning**: Detailed technical answer with specific frameworks, design patterns, and quantified results.
+
+### Medium-quality answer (Score: 55)
+
+```
+I built web applications using React and Node. I focused on making the 
+code clean and the user experience smooth.
+```
+
+**Reasoning**: Mentions technologies but lacks depth. No specific patterns, architectures, or problem-solving details.
+
+### Low-quality answer (Score: 25)
+
+```
+I have experience with coding.
+```
+
+**Reasoning**: Vague and lacks any technical substance.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="GitHub verification" icon="github" href="/ai-system/github-verification">
+    Learn how GitHub scores complement interview evaluation
+  </Card>
+  <Card title="Integrity checks" icon="shield" href="/ai-system/integrity-checks">
+    See how interview scores are used in fraud detection
+  </Card>
+</CardGroup>

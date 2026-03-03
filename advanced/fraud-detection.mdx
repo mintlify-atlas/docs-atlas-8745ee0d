@@ -1,0 +1,168 @@
+---
+title: Fraud detection
+description: How FairMatch AI detects and prevents fraudulent applications
+---
+
+## Overview
+
+FairMatch AI includes adaptive fraud detection that automatically identifies suspicious patterns in candidate applications. When inconsistencies are detected, the system spawns a specialized Integrity Agent to investigate and apply score penalties.
+
+## How fraud detection works
+
+### Trigger conditions
+
+The fraud detection system activates when it detects significant discrepancies between different data sources:
+
+```python
+if abs(github_score - interview_score) > 30 and candidate.github_link:
+    print(f"FRAUD DETECTED: GitHub({github_score}) vs Interview({interview_score}). Spawning Integrity Agent...")
+    fraud_query = f"GitHub Score: {github_score}\nInterview Score: {interview_score}\nResume Info:\n{candidate.resume_text}"
+    integrity_json = get_integrity_intelligence(fraud_query)
+    integrity_penalty = integrity_json.get("penalty_score", 0)
+    fraud_notes = integrity_json.get("investigation_notes", "")
+```
+
+<Warning>
+  A difference of more than 30 points between GitHub and interview scores triggers automatic fraud investigation.
+</Warning>
+
+### What gets flagged
+
+The system looks for these red flags:
+
+- **Score discrepancies**: GitHub score and interview score differ by more than 30 points
+- **Missing data**: Claimed skills but no GitHub activity or projects
+- **Inconsistent experience**: Self-reported years don't match account age or project history
+- **Profile mismatches**: Resume content contradicts LinkedIn or GitHub data
+
+## Investigation process
+
+When fraud is suspected, FairMatch spawns an Integrity Agent that performs deep analysis:
+
+### 1. Data collection
+
+The agent receives:
+- GitHub score and evidence
+- Interview performance score
+- Complete resume text
+- All claimed skills and experience
+
+### 2. Cross-validation
+
+The Integrity Agent checks:
+- Do claimed skills appear in actual GitHub projects?
+- Does interview performance match code quality?
+- Is experience consistent across all sources?
+
+### 3. Penalty calculation
+
+```python
+integrity_json = get_integrity_intelligence(fraud_query)
+integrity_penalty = integrity_json.get("penalty_score", 0)
+fraud_notes = integrity_json.get("investigation_notes", "")
+```
+
+The agent returns:
+- `penalty_score` - Points to deduct from final score (0-100)
+- `investigation_notes` - Detailed explanation of findings
+- `fraud_probability` - Likelihood score (0-100%)
+
+### 4. Score adjustment
+
+```python
+if integrity_penalty > 0:
+    final_score = max(0, final_score - integrity_penalty)
+```
+
+The penalty is subtracted from the candidate's final evaluation score, with a floor of 0.
+
+## Investigation results
+
+Fraud investigation findings appear in the evaluation results:
+
+```python
+if fraud_notes:
+    weaknesses.append(f"FRAUD INVESTIGATION: {fraud_notes} (Penalty: -{integrity_penalty} pts)")
+```
+
+Example weakness entry:
+
+```json
+{
+  "weaknesses": [
+    "FRAUD INVESTIGATION: GitHub activity shows minimal Python experience despite claiming 5 years. Interview responses appear copied from online sources. (Penalty: -40 pts)"
+  ]
+}
+```
+
+## Real-world example
+
+### Scenario
+
+A candidate applies with:
+- Resume claiming: "5 years Python experience, built 10+ production systems"
+- GitHub profile: Created 3 months ago, 2 forked repositories, no original code
+- Interview score: 85/100 (strong theoretical answers)
+
+### Detection
+
+```
+FRAUD DETECTED: GitHub(15) vs Interview(85). Spawning Integrity Agent...
+```
+
+The 70-point gap triggers investigation.
+
+### Investigation findings
+
+```json
+{
+  "fraud_probability": 78,
+  "penalty_score": 40,
+  "investigation_notes": "Significant discrepancy between claimed experience and verifiable code contributions. GitHub account is recent with minimal original work. Interview answers show strong theoretical knowledge but lack practical implementation details that would come from 5 years of production experience."
+}
+```
+
+### Final impact
+
+Original score: 72/100
+After penalty: 32/100
+
+The candidate's rank drops significantly, and the investigation notes appear in the evaluation report for hiring managers to review.
+
+## Preventing false positives
+
+The system is designed to minimize false fraud alerts:
+
+- **Only activates with GitHub link**: No penalty if candidate doesn't provide GitHub
+- **Requires significant gap**: Small differences (< 30 points) are ignored
+- **Human review**: Investigation notes are transparent for manual verification
+- **Context-aware**: Considers that not all developers use GitHub actively
+
+<Warning>
+  Fraud detection only triggers when a candidate provides a GitHub link AND shows a >30 point discrepancy with interview performance.
+</Warning>
+
+## Viewing fraud alerts
+
+Fraud investigation results appear in the `EvaluationResult` model:
+
+```python
+class EvaluationResult(BaseModel):
+    candidate_id: str
+    job_id: Optional[str] = None
+    name: str
+    integrity_score: int      # Overall integrity score
+    final_score: int          # After penalty applied
+    weaknesses: List[str]     # Includes fraud notes if triggered
+    risk_level: str           # May be elevated due to fraud
+    recommendation: str
+```
+
+Check the `weaknesses` array for entries starting with "FRAUD INVESTIGATION:" to identify candidates flagged by the system.
+
+## Best practices
+
+- **Review all fraud alerts**: Investigate any candidate with fraud investigation notes
+- **Consider context**: Some legitimate candidates may have private repos or work not reflected on GitHub
+- **Document decisions**: If you override a fraud penalty, document why
+- **Update thresholds**: Adjust the 30-point threshold if it's too sensitive for your use case

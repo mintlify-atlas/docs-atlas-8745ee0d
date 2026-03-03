@@ -1,0 +1,204 @@
+---
+title: Applying to jobs
+description: Submit your application and get instant AI evaluation results
+---
+
+FairMatch AI streamlines the job application process with instant evaluation. This guide covers how to find jobs, submit applications, and track your results.
+
+## Browse available jobs
+
+The job board displays all open positions across companies using FairMatch AI:
+
+1. Navigate to the jobs page from your candidate dashboard
+2. Browse job listings with details about:
+   - Job title and company
+   - Required and preferred skills
+   - Minimum experience requirements
+   - Number of openings
+3. Click "Apply" on any role that interests you
+
+**API endpoint:** `GET /api/jobs` returns all available job listings.
+
+**Reference:** ~/workspace/source/backend/main.py:246-249
+
+## Submit your application
+
+The application process combines profile creation with an AI interview:
+
+<Steps>
+  <Step title="Complete your profile">
+    Fill out all required fields in the personal information section:
+    - Name and email
+    - Skills (comma-separated list)
+    - Years of experience
+    - GitHub profile link (optional)
+    - Projects description
+    - Resume upload or text
+    
+    See the [Creating your profile](/candidates/creating-profile) guide for detailed instructions.
+  </Step>
+  
+  <Step title="Answer AI interview questions">
+    Respond to three standard interview questions:
+    1. "Explain your strongest project."
+    2. "Describe a technical challenge you solved."
+    3. "How do you handle team conflict?"
+    
+    Each answer should be thoughtful and specific. The AI evaluates response quality, relevance, and technical depth.
+    
+    <Tip>
+      Provide concrete examples and quantify your impact when possible. Strong answers include specific technologies, metrics, and outcomes.
+    </Tip>
+  </Step>
+  
+  <Step title="Submit and wait for evaluation">
+    Click "Submit Application" to send your profile. The system:
+    1. Creates your candidate record
+    2. Triggers AI evaluation automatically
+    3. Generates scores across multiple dimensions
+    
+    Evaluation typically completes in seconds.
+  </Step>
+</Steps>
+
+## Application submission flow
+
+When you submit, the following happens:
+
+```javascript
+const candidate = {
+  name: formData.name,
+  email: formData.email,
+  skills: formData.skills.split(',').map(s => s.trim()),
+  experience: formData.experience,
+  projects: formData.projects,
+  github_link: formData.github_link,
+  resume_text: formData.resume_text,
+  interview_answers: formData.answers
+};
+
+// Submit application
+POST /api/jobs/{jobId}/apply
+
+// Trigger AI evaluation
+POST /api/jobs/{jobId}/evaluate
+```
+
+**Reference:** ~/workspace/source/frontend/src/pages/CandidateInterface.tsx:164-198
+
+## View your evaluation results
+
+After submission, you immediately see your AI evaluation:
+
+### Score breakdown
+
+Your evaluation includes scores across five categories:
+
+| Category | Weight | Description |
+|----------|--------|-------------|
+| Skill match | 30% | Alignment of your skills with job requirements |
+| GitHub evaluation | 25% | Code quality, projects, and contributions |
+| Interview responses | 25% | Quality and relevance of your answers |
+| Experience | 10% | Years of experience vs. job requirements |
+| Integrity | 10% | Consistency across resume, GitHub, and answers |
+
+**Final score:** Weighted average of all categories (0-100%)
+
+### AI feedback
+
+The evaluation provides:
+
+- **Detected strengths:** Key qualifications and standout skills
+- **Improvement areas:** Gaps or weaknesses in your profile
+- **Risk level:** Assessment of potential concerns
+- **Recommendation:** Final hiring decision (Strong Hire, Hire, or Reject)
+
+<Note>
+  In production, your evaluation goes to the hiring team for review. The demo shows immediate results for transparency.
+</Note>
+
+### Individual scores
+
+You can view detailed scores for each evaluation dimension:
+- Skill score (0-100)
+- GitHub score (0-100)
+- Interview score (0-100)
+- Experience score (0-100)
+- Integrity score (0-100)
+
+**Reference:** ~/workspace/source/frontend/src/pages/CandidateInterface.tsx:216-233
+
+## Track your applications
+
+Access your application history from the candidate dashboard:
+
+<Steps>
+  <Step title="Navigate to My Applications">
+    From your dashboard, view all jobs you've applied to. If you haven't applied anywhere yet, you'll see a prompt to browse the job board.
+  </Step>
+  
+  <Step title="Review application status">
+    Each application shows:
+    - Job title and company
+    - Date you applied
+    - AI evaluation status (Evaluated or AI Processing)
+    - Your final score (percentage)
+    - Hiring recommendation
+  </Step>
+  
+  <Step title="Monitor multiple applications">
+    The table format lets you compare scores and recommendations across different roles.
+    
+    **Status indicators:**
+    - **Evaluated** (green badge): AI analysis complete
+    - **AI Processing** (blue badge): Evaluation in progress
+  </Step>
+</Steps>
+
+### Applications API
+
+The system fetches your applications using your email:
+
+```
+GET /api/candidates/{email}/applications
+```
+
+Returns array of applications with:
+- Application ID and job details
+- Submission timestamp
+- Full evaluation results (if complete)
+
+**Reference:** ~/workspace/source/backend/main.py:365-385
+
+## Tips for strong applications
+
+<Card title="Optimize your profile" icon="star">
+  - Match your listed skills to the job requirements
+  - Include a GitHub profile with active, quality repositories
+  - Provide detailed project descriptions with outcomes
+  - Ensure your resume is comprehensive and well-formatted
+</Card>
+
+<Card title="Ace the AI interview" icon="message-check">
+  - Give specific, detailed answers with examples
+  - Mention relevant technologies and methodologies
+  - Explain your problem-solving process clearly
+  - Quantify your impact and results when possible
+</Card>
+
+<Card title="Verify your information" icon="shield-check">
+  - Ensure consistency between your resume, GitHub, and answers
+  - Double-check that skills match your actual experience
+  - Verify all links work correctly before submitting
+</Card>
+
+## What happens after you apply
+
+Your application follows this workflow:
+
+1. **Immediate evaluation:** AI analyzes your profile in seconds
+2. **Company review:** Hiring team receives your evaluation results
+3. **Decision:** Company decides whether to move forward based on AI recommendation and their own review
+4. **Next steps:** If selected, the company contacts you directly via email
+
+You can continue applying to other roles while waiting for responses.

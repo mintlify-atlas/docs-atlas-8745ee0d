@@ -1,0 +1,87 @@
+---
+title: Delete job
+description: Delete a job posting from the system
+---
+
+## Delete a job
+
+Permanently delete a job posting from the FairMatch AI system. This action cannot be undone.
+
+<Warning>
+  Deleting a job will also affect all associated candidates and evaluations. Make sure you want to proceed before deleting.
+</Warning>
+
+### Endpoint
+
+```
+DELETE /api/jobs/{job_id}
+```
+
+### Authentication
+
+This endpoint requires authentication. Include your authentication credentials in the request.
+
+### Path parameters
+
+<ParamField path="job_id" type="string" required>
+  The unique identifier of the job you want to delete.
+</ParamField>
+
+### Response
+
+Returns a confirmation message upon successful deletion.
+
+<ResponseField name="status" type="string">
+  Status of the deletion operation ("success").
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message indicating the job was deleted.
+</ResponseField>
+
+<ResponseField name="job_id" type="string">
+  The ID of the deleted job.
+</ResponseField>
+
+### Status codes
+
+<ResponseField name="200" type="Success">
+  Job deleted successfully.
+</ResponseField>
+
+<ResponseField name="401" type="Unauthorized">
+  Authentication credentials are missing or invalid.
+</ResponseField>
+
+<ResponseField name="404" type="Not Found">
+  Job with the specified ID does not exist.
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  An error occurred while deleting the job.
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X DELETE https://api.fairmatch.ai/api/jobs/a1b2c3d4 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Example response
+
+```json
+{
+  "status": "success",
+  "message": "Job deleted successfully",
+  "job_id": "a1b2c3d4"
+}
+```
+
+### Error response
+
+```json
+{
+  "detail": "Job not found"
+}
+```

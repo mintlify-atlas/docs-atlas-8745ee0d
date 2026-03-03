@@ -1,0 +1,112 @@
+---
+title: Parse resume
+description: Extract text content from a PDF resume file
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.fairmatch.ai/api/extract-resume \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@resume.pdf"
+```
+
+```python Python
+import requests
+
+with open('resume.pdf', 'rb') as f:
+    files = {'file': f}
+    response = requests.post(
+        "https://api.fairmatch.ai/api/extract-resume",
+        files=files
+    )
+    data = response.json()
+    print(data['text'])
+```
+
+```javascript JavaScript
+const formData = new FormData();
+formData.append('file', resumeFile);
+
+const response = await fetch(
+  'https://api.fairmatch.ai/api/extract-resume',
+  {
+    method: 'POST',
+    body: formData
+  }
+);
+const data = await response.json();
+console.log(data.text);
+```
+</CodeGroup>
+
+## Request body
+
+<ParamField body="file" type="file" required>
+  The PDF resume file to parse. Must be a valid PDF document.
+</ParamField>
+
+## How it works
+
+This endpoint extracts raw text content from PDF resumes using PyMuPDF (fitz). It:
+
+1. Validates that the uploaded file is a PDF
+2. Reads the PDF content from the uploaded file stream
+3. Extracts text from each page of the PDF
+4. Returns the concatenated text content
+
+Use this endpoint to extract resume text before creating a candidate profile or for preprocessing resume data.
+
+## Response
+
+Returns the extracted text content from the PDF.
+
+<ResponseField name="text" type="string">
+  The raw text content extracted from all pages of the PDF resume
+</ResponseField>
+
+## Response example
+
+<CodeGroup>
+```json 200 - Success
+{
+  "text": "John Doe\nSoftware Engineer\njohn.doe@email.com | (555) 123-4567\n\nEXPERIENCE\nSenior Software Engineer\nTech Corp, San Francisco, CA\n2020 - Present\n- Developed microservices using Python and FastAPI\n- Led team of 5 engineers\n- Improved system performance by 40%\n\nSKILLS\nPython, JavaScript, React, PostgreSQL, Docker, AWS\n\nEDUCATION\nB.S. Computer Science\nUniversity of California, Berkeley\n2016"
+}
+```
+
+```json 400 - Invalid file type
+{
+  "detail": "Only PDF files are supported"
+}
+```
+
+```json 500 - Parsing failed
+{
+  "detail": "Failed to parse PDF: corrupted file"
+}
+```
+</CodeGroup>
+
+## Error responses
+
+<ResponseField name="detail" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### Status codes
+
+- `200` - Resume parsed successfully
+- `400` - Invalid request (non-PDF file uploaded)
+- `500` - Failed to parse the PDF (corrupted file, invalid format, etc.)
+
+<Warning>
+  Only PDF files are supported. If you need to parse resumes in other formats (DOCX, images), you'll need to convert them to PDF first or use a different endpoint.
+</Warning>
+
+## Use cases
+
+- **Candidate onboarding**: Extract resume text before creating a candidate profile
+- **Bulk processing**: Parse multiple resumes in a workflow before importing candidates
+- **Data extraction**: Get raw text for further processing with NLP or AI analysis
+- **Resume validation**: Verify that a PDF contains readable text content

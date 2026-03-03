@@ -1,0 +1,159 @@
+---
+title: Update candidate
+description: Update an existing candidate's information
+---
+
+## PUT /api/candidates/{candidate_id}
+
+Update information for an existing candidate. You can modify any candidate field including skills, experience, projects, and profile links.
+
+### Authentication
+
+No authentication required for this endpoint.
+
+### Path parameters
+
+<ParamField path="candidate_id" type="string" required>
+  The unique identifier of the candidate to update
+</ParamField>
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Full name of the candidate
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Email address of the candidate
+</ParamField>
+
+<ParamField body="skills" type="array" required>
+  List of skills possessed by the candidate
+</ParamField>
+
+<ParamField body="experience" type="integer" required>
+  Years of professional experience
+</ParamField>
+
+<ParamField body="projects" type="string">
+  Description of relevant projects
+</ParamField>
+
+<ParamField body="resume_text" type="string">
+  Extracted text content from the candidate's resume
+</ParamField>
+
+<ParamField body="github_link" type="string">
+  URL to the candidate's GitHub profile
+</ParamField>
+
+<ParamField body="linkedin_link" type="string">
+  URL to the candidate's LinkedIn profile
+</ParamField>
+
+<ParamField body="interview_answers" type="array">
+  List of interview question responses
+</ParamField>
+
+### Response
+
+Returns the updated candidate object.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the candidate
+</ResponseField>
+
+<ResponseField name="job_id" type="string">
+  The job posting ID this candidate applied to
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Full name of the candidate
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Email address of the candidate
+</ResponseField>
+
+<ResponseField name="skills" type="array">
+  List of candidate skills
+</ResponseField>
+
+<ResponseField name="experience" type="integer">
+  Years of professional experience
+</ResponseField>
+
+<ResponseField name="projects" type="string">
+  Description of relevant projects
+</ResponseField>
+
+<ResponseField name="resume_text" type="string">
+  Extracted resume text content
+</ResponseField>
+
+<ResponseField name="github_link" type="string">
+  GitHub profile URL
+</ResponseField>
+
+<ResponseField name="linkedin_link" type="string">
+  LinkedIn profile URL
+</ResponseField>
+
+<ResponseField name="interview_answers" type="array">
+  Interview question responses
+</ResponseField>
+
+<ResponseField name="user_id" type="string" optional>
+  Associated registered user ID, if applicable
+</ResponseField>
+
+### Request example
+
+```bash
+curl -X PUT https://api.fairmatch.ai/api/candidates/xyz789ab \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Smith",
+    "email": "jane.smith@newdomain.com",
+    "skills": ["Python", "React", "PostgreSQL", "Docker"],
+    "experience": 6,
+    "projects": "E-commerce platform with 100K users | Real-time analytics dashboard | Microservices architecture",
+    "resume_text": "Experienced full-stack engineer with expertise in...",
+    "github_link": "https://github.com/janesmith",
+    "linkedin_link": "https://linkedin.com/in/janesmith"
+  }'
+```
+
+### Response example
+
+```json
+{
+  "id": "xyz789ab",
+  "job_id": "abc123",
+  "name": "Jane Smith",
+  "email": "jane.smith@newdomain.com",
+  "skills": ["Python", "React", "PostgreSQL", "Docker"],
+  "experience": 6,
+  "projects": "E-commerce platform with 100K users | Real-time analytics dashboard | Microservices architecture",
+  "resume_text": "Experienced full-stack engineer with expertise in...",
+  "github_link": "https://github.com/janesmith",
+  "linkedin_link": "https://linkedin.com/in/janesmith",
+  "interview_answers": [],
+  "user_id": null
+}
+```
+
+### Status codes
+
+- `200` - Candidate successfully updated
+- `404` - Candidate not found
+- `400` - Invalid request body or parameters
+- `500` - Internal server error
+
+### Error response example
+
+```json
+{
+  "detail": "Candidate not found"
+}
+```

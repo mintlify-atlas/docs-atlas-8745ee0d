@@ -1,0 +1,174 @@
+---
+title: Running AI evaluations
+description: Evaluate candidates with FairMatch AI's multi-agent scoring system
+---
+
+Run comprehensive AI evaluations to score and rank candidates based on your customized job criteria.
+
+## Prerequisites
+
+Before running an evaluation:
+
+<Check>You have created a job posting</Check>
+<Check>You have added at least one candidate to the job</Check>
+<Check>Your AI evaluation weights are configured (must total 100)</Check>
+
+## Run the evaluation pipeline
+
+<Steps>
+  <Step title="Select your job">
+    Ensure the correct job is selected in the dropdown menu at the top of your dashboard.
+  </Step>
+  
+  <Step title="Click Run AI Pipeline">
+    In the Candidate Cohort panel, click the **Run AI Pipeline** button (located at the bottom).
+    
+    The button will be disabled if you have no candidates added to the job.
+  </Step>
+  
+  <Step title="Wait for processing">
+    The button will display "Processing via AI..." while the evaluation runs. The system:
+    - Updates your job configuration
+    - Evaluates each candidate through multiple AI agents
+    - Calculates weighted scores
+    - Performs fraud detection when needed
+    
+    <Note>
+      Large candidate pools may take several minutes to process. Do not navigate away from the page during evaluation.
+    </Note>
+  </Step>
+  
+  <Step title="View results">
+    When complete, the results appear automatically in the right panel. Candidates are ranked by final score in descending order.
+  </Step>
+</Steps>
+
+## Understanding evaluation scores
+
+The AI pipeline generates five component scores for each candidate:
+
+### Skill score
+
+Measures how well the candidate's skills match your required and preferred skills. The Decision Intelligence agent analyzes:
+- Verified skills from resume and projects
+- Primary programming languages
+- Project complexity indicators
+- Consistency between claimed and demonstrated skills
+
+### GitHub score
+
+Evaluates the candidate's GitHub profile activity and code quality. The GitHub Analyst agent examines:
+- Repository activity and contributions
+- Project quality and complexity
+- Code patterns and best practices
+- Open source participation
+
+<Tip>
+  Candidates without GitHub links receive a score of 0. Encourage candidates to include their GitHub profiles for accurate evaluation.
+</Tip>
+
+### Interview score
+
+Assesses interview responses (if provided). The Interview Grader agent analyzes:
+- Answer quality and relevance
+- Technical depth
+- Communication clarity
+- Problem-solving approach
+
+If no interview answers are provided, the system uses resume length as a fallback metric.
+
+### Experience score
+
+Compares the candidate's years of experience against your minimum requirement. The Decision Intelligence agent evaluates:
+- Total years of relevant experience
+- Experience level classification (junior, mid, senior)
+- Career progression patterns
+- Domain expertise depth
+
+### Integrity score
+
+Measures profile consistency and detects potential fraud. The system:
+- Compares claims across different data sources
+- Flags inconsistencies between GitHub activity and interview responses
+- Detects resume padding or exaggeration
+- Identifies bias indicators in language
+
+<Warning>
+  When GitHub and interview scores differ by more than 30 points, the Integrity Analyst agent is automatically triggered. This may apply penalties to the final score.
+</Warning>
+
+### Final score calculation
+
+The final score is a weighted average of the five component scores:
+
+```
+Final Score = (Skill × W₁) + (GitHub × W₂) + (Interview × W₃) + (Experience × W₄) + (Integrity × W₅)
+```
+
+Where W₁ through W₅ are your configured evaluation weights (totaling 100%).
+
+If fraud is detected, an integrity penalty is subtracted from the final score.
+
+## Review evaluation results
+
+### Results table
+
+The AI Ranking Engine Results table displays candidates with the following columns:
+
+- **Rank** - Position in the leaderboard (#1 = highest score)
+- **Candidate Profile** - Name (or anonymized ID in blind mode)
+- **Final Score** - Overall weighted score (0-100)
+- **Skill, GitHub, Interview, Integrity** - Individual component scores (clickable to sort)
+- **Risk Flag** - Low Risk (green), Medium Risk (yellow), or High Risk (red)
+- **Verdict** - Strong Hire, Hire, Waitlist, or Consider
+- **Action** - "View Details" button (appears on hover)
+
+<Tip>
+  Click any column header with the ↕ symbol to sort candidates by that metric.
+</Tip>
+
+### Visual analytics
+
+The dashboard displays several charts to help you analyze your candidate pool:
+
+**Final Score Leaderboard** - Horizontal bar chart showing top 10 candidates by final score. The #1 candidate is highlighted in green.
+
+**Risk Profile Distribution** - Pie chart breaking down candidates by risk level (Low, Medium, High).
+
+**Skill Match Breakdown** - Bar chart comparing skill scores across top candidates.
+
+**Average Profile** - Radar chart showing the average scores across all five evaluation dimensions.
+
+**GitHub Activity** - Bar chart highlighting candidates with strong GitHub profiles.
+
+### Candidate details
+
+Click **View Details** on any candidate row to see:
+- Individual radar chart of their five scores
+- Detailed strengths list (verified skills, reasoning)
+- Weaknesses and risk factors
+- Fairness adjustment notes (if applicable)
+- Fraud investigation results (if triggered)
+
+## Re-run evaluations
+
+You can re-evaluate candidates at any time:
+
+1. Update your job requirements or evaluation weights
+2. Click **Run AI Pipeline** again
+3. Previous evaluation results are automatically replaced
+
+<Note>
+  Re-running evaluations recalculates all scores from scratch. This is useful after updating job criteria or adding interview data.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Blind review mode" icon="eye-slash" href="/companies/blind-review-mode">
+    Review candidates anonymously to reduce bias
+  </Card>
+  <Card title="Creating jobs" icon="briefcase" href="/companies/creating-jobs">
+    Create another job posting
+  </Card>
+</CardGroup>

@@ -1,0 +1,97 @@
+---
+title: Creating job postings
+description: Learn how to create and configure job postings in FairMatch AI
+---
+
+Create job postings with customizable AI evaluation criteria to find the best candidates for your roles.
+
+## Access the job creation form
+
+<Steps>
+  <Step title="Navigate to your company dashboard">
+    Log in to FairMatch AI with your company account and access the Company Dashboard.
+  </Step>
+  
+  <Step title="Open the job creation form">
+    In the top navigation area, click the dropdown menu and select **+ Create New Job Profile**. The left panel will display the job creation form.
+    
+    <Note>
+      If you have existing jobs, they will appear in the dropdown menu. Select "+ Create New Job Profile" to start fresh.
+    </Note>
+  </Step>
+</Steps>
+
+## Configure job details
+
+Fill in the job information in the "Create New Job" panel on the left side of your dashboard.
+
+### Basic information
+
+Enter the core details about your open position:
+
+- **Job Title** - The role name (e.g., "Senior Python Developer")
+- **Required Skills** - Comma-separated list of must-have skills (e.g., "Python, FastAPI, AWS")
+- **Preferred Skills** - Comma-separated list of nice-to-have skills (e.g., "Docker, TypeScript")
+- **Min Experience** - Minimum years of experience required
+- **Openings** - Number of positions available
+
+<Tip>
+  Use clear, specific skill names to improve AI matching accuracy. For example, use "React" instead of "Frontend framework".
+</Tip>
+
+### AI evaluation weights
+
+Customize how the AI evaluates candidates by adjusting the five scoring criteria. The total of all weights must equal 100.
+
+- **Skill** (default: 30%) - Technical skill alignment with job requirements
+- **GitHub** (default: 25%) - GitHub profile activity and project quality
+- **Interview** (default: 25%) - Interview response quality (if provided)
+- **Experience** (default: 10%) - Years of relevant experience
+- **Integrity** (default: 10%) - Consistency checks and fraud detection
+
+Drag the sliders to adjust weights based on what matters most for your role. The percentage values update in real-time.
+
+<Warning>
+  The AI Evaluation Weights section displays "Total Must = 100" at the top. Ensure your weights sum to exactly 100 before publishing.
+</Warning>
+
+## Publish your job
+
+Once you've configured all job details:
+
+<Steps>
+  <Step title="Review your configuration">
+    Double-check the job title, skills, experience requirements, and evaluation weights.
+  </Step>
+  
+  <Step title="Click Save & Publish Job">
+    At the bottom of the job creation panel, click the **Save & Publish Job** button. The button will show "Creating..." while processing.
+  </Step>
+  
+  <Step title="Verify job creation">
+    After successful creation, your new job will automatically be selected and appear in the dropdown menu. The panel title will change from "Create New Job" to "Manage Job Profile".
+  </Step>
+</Steps>
+
+## Update existing jobs
+
+You can modify job requirements and weights at any time:
+
+1. Select the job from the dropdown menu in the top navigation
+2. Edit any fields in the "Manage Job Profile" panel
+3. Click **Update Requirements** at the bottom of the form
+
+<Note>
+  Updating job requirements will affect future evaluations but won't retroactively change existing candidate scores. Run a new evaluation after updating to refresh results.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Managing candidates" icon="users" href="/companies/managing-candidates">
+    Learn how to add candidates to your job posting
+  </Card>
+  <Card title="Running evaluations" icon="sparkles" href="/companies/running-evaluations">
+    Evaluate candidates with AI scoring
+  </Card>
+</CardGroup>

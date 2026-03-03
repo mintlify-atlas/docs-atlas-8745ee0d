@@ -1,0 +1,238 @@
+---
+title: Configuration
+description: Configure FairMatch AI environment variables and settings
+---
+
+FairMatch AI uses environment variables to manage configuration for database connections, API keys, and AI services. This guide covers all configuration options.
+
+## Environment file setup
+
+FairMatch AI stores configuration in a `.env` file located in the `backend` directory.
+
+<Steps>
+  <Step title="Create the environment file">
+    Copy the example environment file to create your configuration:
+
+    ```bash
+    cd backend
+    cp .env.example .env
+    ```
+  </Step>
+
+  <Step title="Edit the file">
+    Open the `.env` file in your preferred text editor:
+
+    ```bash
+    nano .env
+    ```
+
+    Or use any text editor you prefer.
+  </Step>
+
+  <Step title="Add your credentials">
+    Update each variable with your actual values (detailed below).
+  </Step>
+</Steps>
+
+## Required environment variables
+
+All of these variables are required for FairMatch AI to function properly.
+
+### Database configuration
+
+#### `SUPABASE_URL`
+
+Your Supabase project URL.
+
+```env
+SUPABASE_URL=your_supabase_project_url
+```
+
+**How to find it**:
+1. Log in to your Supabase dashboard
+2. Navigate to Project Settings > API
+3. Copy the "Project URL" value
+
+**Example**: `https://abcdefghijklmnop.supabase.co`
+
+#### `SUPABASE_KEY`
+
+Your Supabase anonymous API key for client-side access.
+
+```env
+SUPABASE_KEY=your_supabase_anon_key
+```
+
+**How to find it**:
+1. In your Supabase dashboard, go to Project Settings > API
+2. Copy the "anon" "public" key from the "Project API keys" section
+
+<Warning>
+  Never commit your Supabase service role key to version control. Use the `anon` key for client applications.
+</Warning>
+
+### AI service configuration
+
+#### `GEMINI_API_KEY`
+
+Your Google Gemini API key for AI-powered evaluations.
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+**How to get it**:
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Create a new API key
+4. Copy the generated key
+
+<Note>
+  FairMatch AI uses Google Gemini for natural language processing, resume analysis, and candidate evaluation. This is a core dependency.
+</Note>
+
+#### `ZYND_API_KEY`
+
+Your Zyndai API key for multi-agent orchestration.
+
+```env
+ZYND_API_KEY=your_zynd_api_key
+```
+
+**How to get it**:
+1. Sign up at [Zyndai](https://zyndai.com)
+2. Navigate to your dashboard
+3. Generate an API key from the API Keys section
+
+<Note>
+  Zyndai powers the multi-agent evaluation pipeline, coordinating the Resume Analyst, GitHub Verifier, Interview Grader, and Integrity Agent.
+</Note>
+
+## Complete configuration example
+
+Here's what your complete `.env` file should look like:
+
+```env
+SUPABASE_URL=https://abcdefghijklmnop.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+GEMINI_API_KEY=AIzaSyD-1234567890abcdefghijk
+ZYND_API_KEY=zynd_1234567890abcdefghijk
+```
+
+## Configuration validation
+
+After setting up your environment variables, verify your configuration:
+
+<Steps>
+  <Step title="Start the backend server">
+    ```bash
+    cd backend
+    source venv/bin/activate
+    python -m uvicorn main:app --reload --port 8000
+    ```
+  </Step>
+
+  <Step title="Check the logs">
+    Monitor the terminal output for any connection errors or warnings about missing environment variables.
+  </Step>
+
+  <Step title="Test the API">
+    Visit http://localhost:8000/docs and try making a test request to verify database connectivity.
+  </Step>
+</Steps>
+
+## Security best practices
+
+<Warning>
+  Never commit your `.env` file to version control. The `.env` file should be listed in your `.gitignore`.
+</Warning>
+
+Follow these security guidelines:
+
+- **Keep keys private**: Never share your API keys in public repositories, issues, or documentation
+- **Rotate keys regularly**: Periodically regenerate your API keys, especially if they may have been exposed
+- **Use service accounts**: For production deployments, use dedicated service accounts with minimal permissions
+- **Environment-specific configs**: Maintain separate `.env` files for development, staging, and production
+- **Backup safely**: If you backup your `.env` file, store it in a secure, encrypted location
+
+## Environment-specific configuration
+
+### Development
+
+For local development, use your personal API keys and a development Supabase project:
+
+```env
+SUPABASE_URL=https://dev-project.supabase.co
+SUPABASE_KEY=dev_anon_key
+GEMINI_API_KEY=dev_gemini_key
+ZYND_API_KEY=dev_zynd_key
+```
+
+### Production
+
+For production deployments:
+
+1. Use a production Supabase project with appropriate security rules
+2. Generate production-specific API keys
+3. Set environment variables through your hosting platform's dashboard (e.g., Vercel, Railway, or AWS)
+4. Enable rate limiting and monitoring on your API keys
+
+## Troubleshooting configuration issues
+
+### "Environment variable not found" errors
+
+- Verify the `.env` file is in the `backend` directory
+- Check that variable names match exactly (including case)
+- Ensure there are no extra spaces around the `=` sign
+- Restart the backend server after making changes
+
+### Database connection failures
+
+- Verify your `SUPABASE_URL` is correct and accessible
+- Test your `SUPABASE_KEY` in the Supabase dashboard
+- Check your network connection and firewall settings
+- Ensure your Supabase project is active and not paused
+
+### AI service errors
+
+- Verify your `GEMINI_API_KEY` is valid and not expired
+- Check your Google AI Studio quota and usage limits
+- Ensure your `ZYND_API_KEY` has the correct permissions
+- Review the agent logs for specific error messages
+
+## Advanced configuration
+
+### Custom ports
+
+To run the backend on a different port:
+
+```bash
+python -m uvicorn main:app --reload --port 8080
+```
+
+### Host binding
+
+To allow external connections in production:
+
+```bash
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### Log levels
+
+Adjust logging verbosity by setting the log level in your startup command:
+
+```bash
+python -m uvicorn main:app --log-level debug
+```
+
+Available levels: `critical`, `error`, `warning`, `info`, `debug`, `trace`
+
+## Next steps
+
+With your configuration complete, you can:
+
+- Start building your first job posting
+- Upload candidate resumes
+- Explore the AI evaluation pipeline
+- Customize the application for your hiring workflow

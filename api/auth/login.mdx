@@ -1,0 +1,101 @@
+---
+title: Login user
+description: Authenticate and log in to FairMatch AI
+---
+
+## POST /api/auth/login
+
+Authenticate a user with their email and password. Returns user information upon successful authentication.
+
+### Authentication
+
+No authentication required.
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  Email address of the registered user
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User password for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique user identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Full name of the authenticated user
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Email address of the authenticated user
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  User role (`company` or `candidate`)
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://api.fairmatch.ai/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane.smith@example.com",
+    "password": "securePassword123"
+  }'
+```
+
+```json
+{
+  "email": "jane.smith@example.com",
+  "password": "securePassword123"
+}
+```
+
+### Example response
+
+```json
+{
+  "id": "a3f8c2d1",
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "role": "candidate"
+}
+```
+
+### Status codes
+
+<ResponseField name="200" type="Success">
+  User successfully authenticated
+</ResponseField>
+
+<ResponseField name="401" type="Error">
+  Invalid password provided
+  
+  ```json
+  {
+    "detail": "Invalid password"
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="404" type="Error">
+  User not found with the provided email
+  
+  ```json
+  {
+    "detail": "User not found"
+  }
+  ```
+</ResponseField>
+
+### Implementation details
+
+- Passwords are verified using bcrypt comparison
+- Passwords are truncated to 72 bytes before verification (matching registration behavior)
+- Authentication is stateless - consider implementing session tokens for production use

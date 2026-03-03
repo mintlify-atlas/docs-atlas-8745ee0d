@@ -1,0 +1,150 @@
+---
+title: Create candidate
+description: Add a new candidate to a job posting
+---
+
+## POST /api/jobs/{job_id}/apply
+
+Add a new candidate application to a specific job posting. This endpoint creates a candidate record and associates it with the specified job.
+
+### Authentication
+
+No authentication required for this endpoint.
+
+### Path parameters
+
+<ParamField path="job_id" type="string" required>
+  The unique identifier of the job posting
+</ParamField>
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Full name of the candidate
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Email address of the candidate
+</ParamField>
+
+<ParamField body="skills" type="array" required>
+  List of skills possessed by the candidate
+</ParamField>
+
+<ParamField body="experience" type="integer" required>
+  Years of professional experience
+</ParamField>
+
+<ParamField body="projects" type="string">
+  Description of relevant projects. Defaults to empty string.
+</ParamField>
+
+<ParamField body="resume_text" type="string">
+  Extracted text content from the candidate's resume. Defaults to empty string.
+</ParamField>
+
+<ParamField body="github_link" type="string">
+  URL to the candidate's GitHub profile. Defaults to empty string.
+</ParamField>
+
+<ParamField body="linkedin_link" type="string">
+  URL to the candidate's LinkedIn profile. Defaults to empty string.
+</ParamField>
+
+<ParamField body="interview_answers" type="array">
+  List of interview question responses. Defaults to empty array.
+</ParamField>
+
+### Response
+
+Returns the created candidate object with an auto-generated ID.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the candidate (8-character UUID)
+</ResponseField>
+
+<ResponseField name="job_id" type="string">
+  The job posting ID this candidate applied to
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Full name of the candidate
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Email address of the candidate
+</ResponseField>
+
+<ResponseField name="skills" type="array">
+  List of candidate skills
+</ResponseField>
+
+<ResponseField name="experience" type="integer">
+  Years of professional experience
+</ResponseField>
+
+<ResponseField name="projects" type="string">
+  Description of relevant projects
+</ResponseField>
+
+<ResponseField name="resume_text" type="string">
+  Extracted resume text content
+</ResponseField>
+
+<ResponseField name="github_link" type="string">
+  GitHub profile URL
+</ResponseField>
+
+<ResponseField name="linkedin_link" type="string">
+  LinkedIn profile URL
+</ResponseField>
+
+<ResponseField name="interview_answers" type="array">
+  Interview question responses
+</ResponseField>
+
+<ResponseField name="user_id" type="string" optional>
+  Associated registered user ID, if applicable
+</ResponseField>
+
+### Request example
+
+```bash
+curl -X POST https://api.fairmatch.ai/api/jobs/abc123/apply \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "skills": ["Python", "React", "PostgreSQL"],
+    "experience": 5,
+    "projects": "E-commerce platform with 100K users | Real-time analytics dashboard",
+    "resume_text": "Experienced full-stack engineer with expertise in...",
+    "github_link": "https://github.com/janesmith",
+    "linkedin_link": "https://linkedin.com/in/janesmith"
+  }'
+```
+
+### Response example
+
+```json
+{
+  "id": "xyz789ab",
+  "job_id": "abc123",
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "skills": ["Python", "React", "PostgreSQL"],
+  "experience": 5,
+  "projects": "E-commerce platform with 100K users | Real-time analytics dashboard",
+  "resume_text": "Experienced full-stack engineer with expertise in...",
+  "github_link": "https://github.com/janesmith",
+  "linkedin_link": "https://linkedin.com/in/janesmith",
+  "interview_answers": [],
+  "user_id": null
+}
+```
+
+### Status codes
+
+- `200` - Candidate successfully created
+- `400` - Invalid request body or parameters
+- `500` - Internal server error

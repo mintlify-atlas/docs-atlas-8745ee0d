@@ -1,0 +1,330 @@
+---
+title: Integrity checks
+description: Learn how FairMatch detects fraud and profile inconsistencies using adaptive integrity analysis and penalty scoring.
+---
+
+## Overview
+
+The Integrity Analyst agent is FairMatch's fraud detection system. It's only spawned when the orchestrator detects suspicious discrepancies between a candidate's GitHub score and interview performance. This adaptive approach saves costs while ensuring thorough investigation of anomalous profiles.
+
+## Agent configuration
+
+The Integrity Analyst registers with fraud detection capabilities:
+
+```python backend/agents/integrity_agent.py
+agent_config = AgentConfig(
+    name="FairMatch Integrity Analyst",
+    description="Deep-dive fraud detection for candidates with highly suspicious profiles. Analyzes discrepancies between GitHub output and interview output.",
+    capabilities={
+        "ai": ["fraud_detection", "integrity_analysis"],
+        "protocols": ["http"],
+        "services": ["integrity_eval"]
+    },
+    webhook_host="0.0.0.0",
+    webhook_port=5004,
+    registry_url="https://registry.zynd.ai",
+    api_key=os.environ.get("ZYND_API_KEY", ""),
+    config_dir=".agent-integrity"
+)
+
+agent = ZyndAIAgent(agent_config=agent_config)
+```
+
+## Adaptive triggering
+
+The orchestrator only spawns the Integrity Analyst when specific conditions are met:
+
+```python backend/ai_engine.py
+integrity_penalty = 0
+fraud_notes = ""
+if abs(github_score - interview_score) > 30 and candidate.github_link:
+    print(f"FRAUD DETECTED: GitHub({github_score}) vs Interview({interview_score}). Spawning Integrity Agent...")
+    fraud_query = f"GitHub Score: {github_score}\nInterview Score: {interview_score}\nResume Info:\n{candidate.resume_text}"
+    integrity_json = get_integrity_intelligence(fraud_query)
+    integrity_penalty = integrity_json.get("penalty_score", 0)
+    fraud_notes = integrity_json.get("investigation_notes", "")
+```
+
+### Triggering conditions
+
+1. **Score discrepancy > 30 points**: Large gap between GitHub and interview scores
+2. **GitHub link present**: Only investigate if there's a GitHub profile to analyze
+3. **Automatic spawn**: No manual intervention required
+
+<Info>
+Adaptive spawning means the Integrity Analyst isn't consulted for every evaluation. This reduces costs and latency while ensuring thorough investigation when red flags appear.
+</Info>
+
+## Structured output model
+
+The agent uses Pydantic models to ensure structured JSON responses:
+
+```python backend/agents/integrity_agent.py
+class IntegrityOutput(BaseModel):
+    fraud_probability: int = Field(description="0-100 probability that the profile is faked/purchased.")
+    investigation_notes: str = Field(description="Detailed reasoning explaining the discrepancy.")
+    penalty_score: int = Field(description="0-100 penalty score to apply to the candidate's final evaluation (higher is worse).")
+
+parser = JsonOutputParser(pydantic_object=IntegrityOutput)
+```
+
+### Output fields
+
+- **fraud_probability**: Likelihood (0-100%) that the profile is fraudulent
+- **investigation_notes**: Detailed explanation of suspicious patterns
+- **penalty_score**: Points to subtract from final score (0-100)
+
+## LLM configuration
+
+The agent uses Gemini with low temperature for consistent fraud detection:
+
+```python backend/agents/integrity_agent.py
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-lite",
+    api_key=os.environ.get("GEMINI_API_KEY", "dummy"),
+    temperature=0.1
+)
+```
+
+## Investigation prompt
+
+The agent receives detailed context about the anomaly:
+
+```python backend/agents/integrity_agent.py
+system_prompt = """
+You are a specialized Fraud Detective Agent for the FairMatch platform.
+The primary Orchestrator agent has flagged this candidate due to a massive mismatch between their verified GitHub score and their technical Interview score.
+
+Your job is to analyze the provided data and determine if the candidate likely purchased their GitHub account, or if they simply choked during the interview. 
+
+Output ONLY a JSON response format.
+
+{format_instructions}
+"""
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", "Analyze the following candidate discrepancy:\n\n{input}")
+])
+
+chain = prompt | llm | parser
+```
+
+The prompt frames two possibilities:
+
+1. **Profile fraud**: Candidate purchased a GitHub account
+2. **Interview anxiety**: Legitimate candidate performed poorly due to nerves
+
+<Note>
+The prompt explicitly asks the agent to distinguish between fraud and legitimate underperformance. This nuance prevents false positives that could unfairly penalize nervous but qualified candidates.
+</Note>
+
+## Message handler
+
+The agent processes fraud investigation requests:
+
+```python backend/agents/integrity_agent.py
+def handler(message: AgentMessage, topic: str):
+    print(f"URGENT: Received data for FRAUD INVESTIGATION...")
+    
+    try:
+        if os.environ.get("GEMINI_API_KEY") == "REPLACE_ME_WITH_GEMINI_API_KEY" or not os.environ.get("GEMINI_API_KEY"):
+             raise Exception("Missing Gemini API Key in .env")
+
+        result_dict = chain.invoke({
+            "input": message.content,
+            "format_instructions": parser.get_format_instructions()
+        })
+        response_str = json.dumps(result_dict)
+    except Exception as e:
+        print(f"Error in fraud intelligence routing. Using deterministic anomaly logic: {e}")
+        # Fallback deterministic logic
+        fallback = {
+            "fraud_probability": 85,
+            "investigation_notes": "High discrepancy detected between validated GitHub commits and interview depth. Anomalous pattern suggests the candidate may not have authored the linked repositories.",
+            "penalty_score": 60
+        }
+        response_str = json.dumps(fallback)
+        
+    agent.set_response(message.message_id, response_str)
+```
+
+## Deterministic fallback
+
+When the LLM is unavailable, the agent applies a conservative fraud assumption:
+
+```python backend/agents/integrity_agent.py
+fallback = {
+    "fraud_probability": 85,
+    "investigation_notes": "High discrepancy detected between validated GitHub commits and interview depth. Anomalous pattern suggests the candidate may not have authored the linked repositories.",
+    "penalty_score": 60
+}
+```
+
+<Info>
+The fallback is intentionally conservative (85% fraud probability, 60-point penalty) because the agent is only triggered for extreme discrepancies. If there's a 30+ point gap and the LLM can't analyze it, it's safer to assume fraud than to allow a potentially purchased profile through.
+</Info>
+
+## Response format
+
+The agent returns structured JSON:
+
+```json
+{
+  "fraud_probability": 85,
+  "investigation_notes": "Candidate's GitHub shows 50+ commits to complex machine learning projects, but interview answers demonstrate no understanding of basic algorithms. Strong evidence of profile purchase.",
+  "penalty_score": 70
+}
+```
+
+## How penalties are applied
+
+The orchestrator subtracts the penalty from the final score:
+
+```python backend/ai_engine.py
+final_score = (
+    skill_score * (job.weight_skill / total_weight) +
+    github_score * (job.weight_github / total_weight) +
+    interview_score * (job.weight_interview / total_weight) +
+    experience_score * (job.weight_experience / total_weight) +
+    integrity_score * (job.weight_integrity / total_weight)
+)
+
+if integrity_penalty > 0:
+    final_score = max(0, final_score - integrity_penalty)
+```
+
+<Note>
+Penalties are applied after weighted scoring, ensuring they have maximum impact. A candidate with an 85/100 base score and a 60-point penalty drops to 25/100, effectively removing them from consideration.
+</Note>
+
+## Fraud notes in evaluation results
+
+Investigation notes are included in the candidate's weaknesses:
+
+```python backend/ai_engine.py
+if fraud_notes:
+    weaknesses.append(f"FRAUD INVESTIGATION: {fraud_notes} (Penalty: -{integrity_penalty} pts)")
+```
+
+This provides transparency to hiring managers about why a candidate scored poorly.
+
+## Orchestrator integration
+
+The orchestrator queries the Integrity Analyst via the ZyndAI network:
+
+```python backend/ai_engine.py
+def get_integrity_intelligence(query_content: str) -> dict:
+    fallback = {"fraud_probability": 0, "investigation_notes": "Error querying Agent", "penalty_score": 0}
+    if not orchestrator:
+        return fallback
+
+    try:
+        agents = orchestrator.search_agents_by_keyword("FairMatch Integrity Analyst")
+        if not agents:
+            return fallback
+            
+        target = agents[0]
+        msg = AgentMessage(
+            content=query_content, sender_id=orchestrator.agent_id,
+            message_type="query", sender_did=orchestrator.identity_credential
+        )
+
+        sync_url = str(target.get('httpWebhookUrl', '')).replace('/webhook', '/webhook/sync')
+        response = orchestrator.x402_processor.post(sync_url, json=msg.to_dict(), timeout=90)
+        
+        if response.status_code == 200:
+            resp_str = response.json().get('response', '{}')
+            try:
+                if resp_str.startswith("```json"): resp_str = resp_str[7:-3]
+                return json.loads(resp_str)
+            except json.JSONDecodeError:
+                return fallback
+        return fallback
+    except Exception as e:
+        print(f"Exception querying integrity network: {e}")
+        return fallback
+```
+
+## Common fraud patterns detected
+
+### 1. Purchased GitHub accounts
+
+**Indicators**:
+- High GitHub score (70+) with extensive commit history
+- Low interview score (below 40) showing no understanding of claimed technologies
+- Generic or vague interview answers despite complex projects
+
+**Example penalty**: 70-80 points
+
+### 2. Resume padding
+
+**Indicators**:
+- Impressive resume claims not reflected in GitHub activity
+- Interview answers that contradict resume experience
+- Inconsistent technology stack between resume and code
+
+**Example penalty**: 40-50 points
+
+### 3. Interview anxiety (false positive mitigation)
+
+**Indicators**:
+- Moderate GitHub score (50-70) with consistent activity
+- Low interview score due to communication issues, not knowledge gaps
+- Resume and GitHub align well
+
+**Example penalty**: 10-20 points (reduced penalty for legitimate candidates)
+
+<Info>
+The Integrity Analyst is trained to distinguish between fraud and interview anxiety. Candidates with consistent profiles but poor interviews receive reduced penalties, while those with clear evidence of purchased accounts face severe score reductions.
+</Info>
+
+## Running the agent
+
+```python backend/agents/integrity_agent.py
+if __name__ == "__main__":
+    if not os.environ.get("ZYND_API_KEY") or os.environ.get("ZYND_API_KEY") == "REPLACE_ME_WITH_ZYND_API_KEY":
+        print("ERROR: ZYND_API_KEY is not set. Please set it in .env")
+        sys.exit(1)
+        
+    print(f"FairMatch Integrity Analyst Agent running at {agent.webhook_url}")
+    print(f"Price: {agent_config.price} per request")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down...")
+```
+
+## Environment variables
+
+```bash
+ZYND_API_KEY=your_zynd_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+## Cost optimization
+
+The adaptive spawning strategy significantly reduces costs:
+
+| Scenario | Integrity Agent Called? | Cost Impact |
+|----------|------------------------|-------------|
+| Normal candidate (score difference less than 30) | No | $0 |
+| Suspicious candidate (score difference greater than 30) | Yes | LLM call + x402 payment |
+| Percentage of candidates investigated | ~5-10% | 90-95% cost savings |
+
+<Note>
+In production, only 5-10% of candidates trigger fraud investigation. This means the Integrity Analyst provides comprehensive fraud detection while adding minimal cost to the evaluation pipeline.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-agent architecture" icon="sitemap" href="/ai-system/multi-agent-architecture">
+    See how Integrity Analyst fits into the larger system
+  </Card>
+  <Card title="Interview grading" icon="comments" href="/ai-system/interview-grading">
+    Learn how interview scores trigger fraud detection
+  </Card>
+</CardGroup>

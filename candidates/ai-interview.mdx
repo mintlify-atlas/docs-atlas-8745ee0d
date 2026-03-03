@@ -1,0 +1,231 @@
+---
+title: AI interview
+description: Understand how FairMatch AI evaluates your interview responses
+---
+
+The AI interview is a critical part of your application on FairMatch AI. Instead of traditional screening calls, you answer written questions that our AI analyzes for technical depth, communication skills, and role fit.
+
+## How the AI interview works
+
+After completing your profile, you proceed to the AI interview section where you answer three standard questions:
+
+1. **"Explain your strongest project."**
+2. **"Describe a technical challenge you solved."**
+3. **"How do you handle team conflict?"**
+
+These questions assess different aspects of your candidacy:
+- Technical competence and project experience
+- Problem-solving abilities and technical depth
+- Soft skills and team collaboration
+
+**Reference:** ~/workspace/source/frontend/src/pages/CandidateInterface.tsx:70-74
+
+## Answer the interview questions
+
+<Steps>
+  <Step title="Read each question carefully">
+    The three questions appear in numbered order in the AI interview section (step 2 of the application form).
+    
+    Each question has a text area where you type your response.
+  </Step>
+  
+  <Step title="Provide detailed, specific answers">
+    Write thoughtful responses for each question. The AI evaluates:
+    - **Relevance:** How well you address the question
+    - **Technical depth:** Specific technologies, methodologies, and approaches
+    - **Clarity:** How clearly you communicate complex ideas
+    - **Impact:** Quantifiable outcomes and results
+    
+    <Tip>
+      Aim for 3-5 sentences per answer. Include specific examples, technologies used, and measurable results.
+    </Tip>
+  </Step>
+  
+  <Step title="Review before submitting">
+    Check your answers for:
+    - Grammar and spelling
+    - Technical accuracy
+    - Completeness (did you fully answer the question?)
+    - Consistency with your resume and GitHub profile
+  </Step>
+</Steps>
+
+## What makes a strong answer
+
+### Question 1: "Explain your strongest project."
+
+**What the AI looks for:**
+- Specific project description and your role
+- Technologies and tools you used
+- Scale and complexity of the project
+- Impact or outcomes (users, performance, business value)
+
+**Example structure:**
+> "I built [project name], a [type of application] using [technologies]. The project [specific challenge or goal]. I implemented [key features] which resulted in [measurable outcome]. The tech stack included [specific tools/frameworks]."
+
+<Note>
+  Include links to live projects or GitHub repositories in your Projects field to support your answer.
+</Note>
+
+### Question 2: "Describe a technical challenge you solved."
+
+**What the AI looks for:**
+- Clear problem statement
+- Your debugging or problem-solving approach
+- Technical skills applied
+- Resolution and lessons learned
+
+**Example structure:**
+> "We encountered [specific problem] in production that caused [impact]. I investigated by [debugging approach] and discovered [root cause]. I resolved it by [solution with technical details], which reduced [metric] by [amount]."
+
+### Question 3: "How do you handle team conflict?"
+
+**What the AI looks for:**
+- Emotional intelligence and maturity
+- Communication and collaboration skills
+- Specific conflict resolution strategies
+- Positive outcomes
+
+**Example structure:**
+> "When conflicts arise, I first [initial approach]. In a recent situation, [specific example] occurred. I [actions taken] and the result was [outcome]. This experience taught me [lesson]."
+
+## How AI evaluates your answers
+
+Your interview responses contribute 25% to your overall evaluation score. The AI analysis includes:
+
+### Natural language processing
+
+The AI evaluates:
+- **Keyword matching:** Relevant technical terms and concepts
+- **Sentiment analysis:** Confidence and positivity in your tone
+- **Coherence:** Logical flow and structure of your answers
+- **Depth:** Level of detail and technical specificity
+
+### Cross-validation
+
+The AI compares your answers against:
+- Skills listed in your profile
+- Projects in your GitHub repositories
+- Experience level and resume content
+- Job requirements
+
+Inconsistencies may lower your integrity score.
+
+### Scoring model
+
+Interview scores range from 0-100 based on:
+- Answer completeness (did you answer all parts?)
+- Technical accuracy and depth
+- Relevance to the job requirements
+- Communication clarity
+
+**Reference:** The `evaluate_candidate` function in `ai_engine.py` processes interview answers along with other profile data.
+
+## Interview data structure
+
+Your answers are stored in the `interview_answers` field:
+
+```python
+class Candidate(BaseModel):
+    # ... other fields ...
+    interview_answers: List[str] = []  # Array of 3 strings
+```
+
+The frontend collects answers in state:
+
+```javascript
+answers: ['', '', '']  // Index 0-2 for questions 1-3
+```
+
+**Reference:** ~/workspace/source/backend/models.py:53 and ~/workspace/source/frontend/src/pages/CandidateInterface.tsx:23
+
+## Common mistakes to avoid
+
+<Warning>
+  **Don't provide vague or generic answers**
+  
+  The AI can detect generic responses that lack specific details. Avoid answers like "I work hard and communicate well." Instead, provide concrete examples.
+</Warning>
+
+<Warning>
+  **Don't contradict your profile**
+  
+  If you claim expertise in a technology in your interview answers but it's not in your skills list or GitHub projects, the AI flags this as an integrity concern.
+</Warning>
+
+<Warning>
+  **Don't leave answers too short**
+  
+  One-sentence answers typically score poorly. Aim for at least 3-5 sentences with specific details and context.
+</Warning>
+
+## Tips for success
+
+### Before you start
+
+- Review the job requirements to understand what skills and experience matter most
+- Prepare specific examples from your experience that demonstrate relevant skills
+- Have your GitHub profile and project links ready to reference
+
+### While answering
+
+- Use technical terminology appropriately (but don't overdo it)
+- Include metrics and quantifiable results when possible
+- Mention specific tools, frameworks, and methodologies
+- Be honest and authentic—don't exaggerate or fabricate
+
+### After submitting
+
+- Your answers are final once submitted
+- The AI evaluation processes immediately
+- You can view how your interview score contributed to your overall evaluation
+
+## Interview score impact
+
+The interview score is one of five evaluation categories:
+
+| Category | Default Weight |
+|----------|---------------|
+| Skill match | 30% |
+| GitHub evaluation | 25% |
+| **Interview responses** | **25%** |
+| Experience | 10% |
+| Integrity | 10% |
+
+<Note>
+  Companies can customize these weights, so interview importance may vary by role. Technical roles often weight interviews at 25-30%.
+</Note>
+
+**Reference:** ~/workspace/source/backend/models.py:34-38
+
+## What happens after the interview
+
+Once you submit your application with interview answers:
+
+1. **Instant analysis:** The AI evaluates all your answers
+2. **Score generation:** You receive an interview score (0-100)
+3. **Feedback:** The evaluation includes strengths and weaknesses
+4. **Overall recommendation:** Interview score factors into the final hiring recommendation
+
+You can see your interview score alongside other category scores in your application results.
+
+**Reference:** ~/workspace/source/frontend/src/pages/CandidateInterface.tsx:230-231
+
+## Sample evaluation output
+
+After evaluation, you see results like:
+
+```
+Interview Score: 85/100
+
+Strengths:
+- Strong technical communication
+- Concrete problem-solving examples
+- Good team collaboration approach
+
+Weaknesses:
+- Could provide more quantifiable metrics
+- Limited detail on conflict resolution outcome
+```
+
+Use this feedback to improve future applications.

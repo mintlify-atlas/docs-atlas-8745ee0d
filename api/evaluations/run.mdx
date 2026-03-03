@@ -1,0 +1,175 @@
+---
+title: Run evaluation
+description: Evaluate all candidates for a job posting and calculate their scores
+---
+
+## Endpoint
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.fairmatch.ai/api/jobs/{job_id}/evaluate \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.fairmatch.ai/api/jobs/{job_id}/evaluate"
+)
+results = response.json()
+```
+
+```javascript JavaScript
+const response = await fetch(
+  `https://api.fairmatch.ai/api/jobs/${jobId}/evaluate`,
+  { method: 'POST' }
+);
+const results = await response.json();
+```
+</CodeGroup>
+
+## Path parameters
+
+<ParamField path="job_id" type="string" required>
+  The unique identifier of the job to evaluate candidates for
+</ParamField>
+
+## How it works
+
+When you call this endpoint, FairMatch AI:
+
+1. Retrieves the job requirements from the database
+2. Fetches all candidates who applied for this job
+3. Deletes any previous evaluation results for this job
+4. Evaluates each candidate using the AI engine
+5. Stores the new evaluation results in the database
+6. Returns all evaluation results
+
+The evaluation considers multiple factors including skills match, GitHub activity, interview performance, experience level, and integrity assessment.
+
+## Response
+
+Returns an array of evaluation results for all candidates.
+
+<ResponseField name="candidate_id" type="string">
+  The unique identifier of the evaluated candidate
+</ResponseField>
+
+<ResponseField name="job_id" type="string">
+  The job posting identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The candidate's full name
+</ResponseField>
+
+<ResponseField name="skill_score" type="integer">
+  Score based on how well the candidate's skills match the job requirements (0-100)
+</ResponseField>
+
+<ResponseField name="github_score" type="integer">
+  Score based on the candidate's GitHub profile and projects (0-100)
+</ResponseField>
+
+<ResponseField name="interview_score" type="integer">
+  Score based on interview responses (0-100)
+</ResponseField>
+
+<ResponseField name="experience_score" type="integer">
+  Score based on years of experience relative to requirements (0-100)
+</ResponseField>
+
+<ResponseField name="integrity_score" type="integer">
+  Score assessing the candidate's authenticity and integrity (0-100)
+</ResponseField>
+
+<ResponseField name="final_score" type="integer">
+  Weighted final score combining all evaluation factors (0-100)
+</ResponseField>
+
+<ResponseField name="strengths" type="array">
+  List of the candidate's key strengths identified during evaluation
+</ResponseField>
+
+<ResponseField name="weaknesses" type="array">
+  List of areas where the candidate may need improvement
+</ResponseField>
+
+<ResponseField name="risk_level" type="string">
+  Assessment of hiring risk (e.g., "Low", "Medium", "High")
+</ResponseField>
+
+<ResponseField name="recommendation" type="string">
+  Final hiring recommendation: "Strong Hire", "Hire", or "Reject"
+</ResponseField>
+
+## Response example
+
+<CodeGroup>
+```json 200 - Success
+[
+  {
+    "candidate_id": "a1b2c3d4",
+    "job_id": "job_123",
+    "name": "Sarah Johnson",
+    "skill_score": 92,
+    "github_score": 88,
+    "interview_score": 85,
+    "experience_score": 90,
+    "integrity_score": 95,
+    "final_score": 90,
+    "strengths": [
+      "Strong Python and React skills",
+      "Active GitHub contributor",
+      "5+ years relevant experience"
+    ],
+    "weaknesses": [
+      "Limited TypeScript experience",
+      "No AWS certifications"
+    ],
+    "risk_level": "Low",
+    "recommendation": "Strong Hire"
+  },
+  {
+    "candidate_id": "e5f6g7h8",
+    "job_id": "job_123",
+    "name": "Michael Chen",
+    "skill_score": 78,
+    "github_score": 72,
+    "interview_score": 80,
+    "experience_score": 70,
+    "integrity_score": 88,
+    "final_score": 77,
+    "strengths": [
+      "Good problem-solving skills",
+      "Team player"
+    ],
+    "weaknesses": [
+      "Limited PostgreSQL experience",
+      "Fewer years of experience than preferred"
+    ],
+    "risk_level": "Medium",
+    "recommendation": "Hire"
+  }
+]
+```
+
+```json 404 - Job not found
+{
+  "detail": "Job not found"
+}
+```
+</CodeGroup>
+
+## Error responses
+
+<ResponseField name="detail" type="string">
+  Error message describing what went wrong
+</ResponseField>
+
+### Status codes
+
+- `200` - Evaluation completed successfully
+- `404` - Job with the specified ID does not exist
+- `500` - Internal server error during evaluation

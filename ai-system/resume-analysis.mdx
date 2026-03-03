@@ -1,0 +1,252 @@
+---
+title: Resume analysis
+description: Learn how the Resume Analyst agent extracts structured candidate information from raw resume text using LLM-powered parsing.
+---
+
+## Overview
+
+The Resume Analyst agent is a specialized AI agent that processes raw resume text and extracts structured information including name, email, experience, skills, and professional summary. It runs independently on port 5006 and is discoverable on the ZyndAI network.
+
+## Agent configuration
+
+The Resume Analyst registers itself on the ZyndAI network with specific capabilities:
+
+```python backend/agents/resume_agent.py
+agent_config = AgentConfig(
+    name="FairMatch Resume Analyst",
+    description="Extracts structured candidate information from raw resume text.",
+    capabilities={
+        "ai": ["resume_parsing", "data_extraction"],
+        "protocols": ["http"],
+        "services": ["resume_eval"]
+    },
+    webhook_host="0.0.0.0",
+    webhook_port=5006,
+    registry_url="https://registry.zynd.ai",
+    api_key=os.environ.get("ZYND_API_KEY", ""),
+    config_dir=".agent-resume"
+)
+
+agent = ZyndAIAgent(agent_config=agent_config)
+```
+
+<Info>
+The agent uses port 5006 to avoid conflicts with other FairMatch agents running on the same machine.
+</Info>
+
+## LLM integration
+
+The Resume Analyst uses Google's Gemini 2.0 Flash Lite model for fast, cost-effective parsing:
+
+```python backend/agents/resume_agent.py
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash-lite",
+    api_key=os.environ.get("GEMINI_API_KEY", "dummy_key_please_replace"),
+    temperature=0
+)
+```
+
+<Note>
+The temperature is set to 0 for deterministic output. You want consistent, factual extraction rather than creative interpretation of resume data.
+</Note>
+
+## Extraction prompt
+
+The agent uses a carefully designed system prompt to ensure structured JSON output:
+
+```python backend/agents/resume_agent.py
+prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are an expert HR data specialist. 
+    Analyze the provided resume text and extract the following information in strict JSON format:
+    {
+        "name": "Full name",
+        "email": "Email address",
+        "experience": integer (total years of experience),
+        "skills": ["skill1", "skill2"],
+        "summary": "Brief 1-sentence summary"
+    }
+    If any field is missing, return an empty string or 0. Return ONLY the JSON."""),
+    ("human", "{input}")
+])
+
+chain = prompt | llm | StrOutputParser()
+```
+
+## Message handler
+
+When the orchestrator sends resume text, the agent processes it and returns structured JSON:
+
+```python backend/agents/resume_agent.py
+def handler(message: AgentMessage, topic: str):
+    print(f"Received input for extraction: {message.content[:50]}...")
+    
+    try:
+        if not os.environ.get("GEMINI_API_KEY"):
+             raise Exception("Missing Gemini API Key in .env")
+
+        prompt_input = message.content
+        result = chain.invoke({"input": prompt_input})
+        
+        # Clean JSON markdown blocks
+        if "```json" in result:
+            result = result.split("```json")[1].split("```")[0].strip()
+        
+        # Validate JSON before sending
+        json.loads(result) 
+        response_str = result
+    except Exception as e:
+        print(f"Error extracting resume data: {e}")
+        fallback = {
+            "name": "Candidate",
+            "email": "not_found@example.com",
+            "experience": 3,
+            "skills": ["Software Engineering"],
+            "summary": "Data extraction partially failed. Using profile links."
+        }
+        response_str = json.dumps(fallback)
+
+    agent.set_response(message.message_id, response_str)
+```
+
+## Response format
+
+The agent returns a JSON object with five fields:
+
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "experience": 5,
+  "skills": ["Python", "React", "AWS", "Docker"],
+  "summary": "Full-stack engineer with expertise in cloud infrastructure and modern web frameworks."
+}
+```
+
+### Field descriptions
+
+- **name**: Candidate's full name extracted from resume header
+- **email**: Primary contact email address
+- **experience**: Total years of professional experience as an integer
+- **skills**: Array of technical skills and technologies
+- **summary**: One-sentence professional summary
+
+## Fallback handling
+
+If the LLM is unavailable or returns invalid JSON, the agent provides intelligent defaults:
+
+```python backend/agents/resume_agent.py
+fallback = {
+    "name": "Candidate",
+    "email": "not_found@example.com",
+    "experience": 3,  # Realistic default for demo
+    "skills": ["Software Engineering"],
+    "summary": "Data extraction partially failed. Using profile links."
+}
+response_str = json.dumps(fallback)
+```
+
+<Note>
+The fallback experience is set to 3 years rather than 0 to provide a realistic baseline when extraction fails. This prevents candidates from being unfairly penalized due to technical issues.
+</Note>
+
+## How the orchestrator uses resume data
+
+The orchestrator calls the Resume Analyst when processing candidate applications:
+
+```python backend/ai_engine.py
+def get_resume_intelligence(resume_text: str) -> dict:
+    fallback = {"name": "", "email": "", "experience": 0, "skills": [], "summary": ""}
+    if not orchestrator: return fallback
+
+    try:
+        agents = orchestrator.search_agents_by_keyword("FairMatch Resume Analyst")
+        if not agents: return fallback
+        target = agents[0]
+        msg = AgentMessage(
+            content=resume_text,
+            sender_id=orchestrator.agent_id,
+            message_type="query",
+            sender_did=orchestrator.identity_credential
+        )
+        sync_url = str(target.get('httpWebhookUrl', '')).replace('/webhook', '/webhook/sync')
+        response = orchestrator.x402_processor.post(sync_url, json=msg.to_dict(), timeout=90)
+        if response.status_code == 200:
+            resp_str = response.json().get('response', '{}')
+            if resp_str.startswith("```json"): resp_str = resp_str[7:-3].strip()
+            return json.loads(resp_str)
+        return fallback
+    except Exception:
+        return fallback
+```
+
+## LinkedIn URL handling
+
+When the input is a LinkedIn URL instead of raw resume text, the agent attempts to process whatever context is available:
+
+```python backend/agents/resume_agent.py
+# If it's a URL, we might want to "scrape" it first, 
+# but for LinkedIn it's hard. We'll use the LLM to process 
+# whatever text we have or just infer from the URL/Context.
+
+prompt_input = message.content
+result = chain.invoke({"input": prompt_input})
+```
+
+<Info>
+LinkedIn scraping is challenging due to authentication requirements. The agent does its best with limited data and relies on other agents (like GitHub Analyst) to fill in gaps.
+</Info>
+
+## JSON cleaning
+
+LLMs sometimes wrap JSON in markdown code blocks. The agent handles this automatically:
+
+```python backend/agents/resume_agent.py
+# Clean JSON markdown blocks
+if "```json" in result:
+    result = result.split("```json")[1].split("```")[0].strip()
+```
+
+## Running the agent
+
+The agent runs as a standalone service:
+
+```python backend/agents/resume_agent.py
+if __name__ == "__main__":
+    if not os.environ.get("ZYND_API_KEY"):
+        print("ERROR: ZYND_API_KEY not set")
+        sys.exit(1)
+        
+    print(f"FairMatch Resume Analyst Agent running at {agent.webhook_url}")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down...")
+```
+
+The agent stays alive and listens for incoming requests from the orchestrator.
+
+## Environment variables
+
+The Resume Analyst requires two environment variables:
+
+```bash
+ZYND_API_KEY=your_zynd_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+<Note>
+Without a valid `GEMINI_API_KEY`, the agent will use fallback values. Without a `ZYND_API_KEY`, the agent cannot register on the network and will exit.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-agent architecture" icon="sitemap" href="/ai-system/multi-agent-architecture">
+    See how Resume Analyst fits into the larger system
+  </Card>
+  <Card title="GitHub verification" icon="github" href="/ai-system/github-verification">
+    Learn how GitHub profiles are verified
+  </Card>
+</CardGroup>

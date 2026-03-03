@@ -1,0 +1,126 @@
+---
+title: Creating your profile
+description: Set up your candidate profile to apply for jobs with FairMatch AI
+---
+
+When you apply for a job on FairMatch AI, you create a complete candidate profile that our AI evaluates against the job requirements. This guide walks you through the profile creation process.
+
+## Access the application form
+
+You can start your application in two ways:
+
+1. Browse jobs on the job board and click "Apply" on a role
+2. Use a direct application link shared by a company
+
+Both methods take you to the application form with the job pre-selected.
+
+## Complete your personal information
+
+The first section collects your basic details:
+
+<Steps>
+  <Step title="Enter your name and email">
+    Provide your full name and a valid email address. If you're logged in, these fields auto-fill from your account.
+    
+    **Fields:**
+    - Full name (required)
+    - Email address (required)
+  </Step>
+  
+  <Step title="Add your skills">
+    List your technical skills as comma-separated values. Be specific and include technologies, frameworks, and tools you're proficient in.
+    
+    **Example:** React, Node.js, Python, PostgreSQL, Docker
+    
+    <Tip>
+      Match your skills to the job requirements when possible. The AI evaluates skill alignment as part of your final score.
+    </Tip>
+  </Step>
+  
+  <Step title="Specify your experience">
+    Enter your total years of professional experience as a number.
+    
+    **Field:** Years of experience (required, minimum 0)
+  </Step>
+  
+  <Step title="Add your GitHub profile (optional)">
+    Provide a link to your GitHub profile. The AI analyzes your repositories, contributions, and code quality.
+    
+    **Format:** https://github.com/username
+    
+    <Note>
+      GitHub analysis contributes 25% to your overall evaluation score. Including this can significantly improve your results.
+    </Note>
+  </Step>
+  
+  <Step title="Describe your projects">
+    Summarize your key projects, including links where available. Describe the technologies used and your specific contributions.
+    
+    **Field:** Projects (required, text area)
+    
+    This information helps the AI understand your practical experience beyond your resume.
+  </Step>
+</Steps>
+
+## Upload and parse your resume
+
+FairMatch AI extracts text from your resume to analyze your background:
+
+<Steps>
+  <Step title="Upload your PDF resume">
+    Click the file input and select a PDF file from your computer. The system only accepts PDF format.
+    
+    When you upload, the system automatically extracts text using PyMuPDF and populates the resume text field.
+    
+    <Warning>
+      Only PDF files are supported. If you have a Word document or other format, convert it to PDF first.
+    </Warning>
+  </Step>
+  
+  <Step title="Review extracted text">
+    After upload completes, check the "Resume Text" field to ensure accurate extraction. You can edit or paste additional content if needed.
+    
+    **What the parser extracts:**
+    - Full text content from all pages
+    - Structured information like contact details
+    - Work history and education sections
+    
+    If text extraction fails or appears incomplete, manually paste your resume content into the text area.
+  </Step>
+</Steps>
+
+### Resume parsing technical details
+
+The `/api/extract-resume` endpoint processes your PDF:
+
+1. Accepts uploaded file via multipart form data
+2. Opens PDF with PyMuPDF (fitz library)
+3. Iterates through all pages and extracts text
+4. Returns cleaned text as JSON response
+
+**Reference:** ~/workspace/source/backend/main.py:349-363
+
+## Profile data structure
+
+Your completed profile maps to the `Candidate` model with these fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Yes | Your full name |
+| email | string | Yes | Email address |
+| skills | array | Yes | List of technical skills |
+| experience | integer | Yes | Years of experience |
+| github_link | string | No | GitHub profile URL |
+| projects | string | Yes | Project descriptions |
+| resume_text | string | Yes | Full resume content |
+| interview_answers | array | No | Responses to interview questions |
+
+**Reference:** ~/workspace/source/backend/models.py:41-53
+
+## Next steps
+
+After completing your profile, you'll proceed to the AI interview section where you answer role-specific questions.
+
+<Card title="AI interview" icon="messages" href="/candidates/ai-interview">
+  Learn how the AI interview process evaluates your responses
+</Card>

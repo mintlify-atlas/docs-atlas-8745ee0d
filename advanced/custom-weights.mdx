@@ -1,0 +1,273 @@
+---
+title: Custom evaluation weights
+description: Customize how FairMatch AI scores candidates by adjusting evaluation weights
+---
+
+## Overview
+
+FairMatch AI calculates candidate scores using five weighted components. You can customize these weights when creating or updating jobs to prioritize what matters most for your role.
+
+## Weight fields
+
+The `JobRequirement` model includes five weight fields:
+
+```python
+class JobRequirement(BaseModel):
+    id: Optional[str] = None
+    company_id: Optional[str] = None
+    title: str
+    required_skills: List[str]
+    preferred_skills: List[str] = []
+    min_experience: int = 0
+    openings: int = 1
+    weight_skill: int = 30
+    weight_github: int = 25
+    weight_interview: int = 25
+    weight_experience: int = 10
+    weight_integrity: int = 10
+```
+
+### Default weights
+
+- `weight_skill` (30) - How well skills match job requirements
+- `weight_github` (25) - Code quality and open source contributions
+- `weight_interview` (25) - Interview performance
+- `weight_experience` (10) - Years of relevant experience
+- `weight_integrity` (10) - Consistency and fraud detection score
+
+## How weights work
+
+FairMatch normalizes weights automatically, so you can use any scale:
+
+```python
+total_weight = job.weight_skill + job.weight_github + job.weight_interview + job.weight_experience + job.weight_integrity
+if total_weight == 0: total_weight = 100
+
+final_score = (
+    skill_score * (job.weight_skill / total_weight) +
+    github_score * (job.weight_github / total_weight) +
+    interview_score * (job.weight_interview / total_weight) +
+    experience_score * (job.weight_experience / total_weight) +
+    integrity_score * (job.weight_integrity / total_weight)
+)
+```
+
+Each component score (0-100) is multiplied by its weight percentage to calculate the final score.
+
+## Setting custom weights
+
+### When creating a job
+
+Include weight fields in your job creation request:
+
+```bash
+curl -X POST "https://api.fairmatch.ai/api/jobs" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Senior Backend Engineer",
+    "required_skills": ["Python", "PostgreSQL", "Docker"],
+    "preferred_skills": ["Kubernetes", "AWS"],
+    "min_experience": 5,
+    "openings": 2,
+    "weight_skill": 40,
+    "weight_github": 30,
+    "weight_interview": 20,
+    "weight_experience": 5,
+    "weight_integrity": 5
+  }'
+```
+
+This configuration prioritizes skills (40%) and GitHub activity (30%) over experience (5%).
+
+### When updating a job
+
+Modify weights for existing jobs:
+
+```bash
+curl -X PUT "https://api.fairmatch.ai/api/jobs/{job_id}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Senior Backend Engineer",
+    "required_skills": ["Python", "PostgreSQL", "Docker"],
+    "weight_skill": 50,
+    "weight_github": 30,
+    "weight_interview": 15,
+    "weight_experience": 3,
+    "weight_integrity": 2
+  }'
+```
+
+## Weight strategies for different roles
+
+### Entry-level positions
+
+Prioritize potential over experience:
+
+```json
+{
+  "weight_skill": 25,
+  "weight_github": 35,
+  "weight_interview": 30,
+  "weight_experience": 5,
+  "weight_integrity": 5
+}
+```
+
+GitHub activity (35%) shows ability to learn and build, while experience (5%) matters less.
+
+### Senior/Staff positions
+
+Balance all factors with emphasis on experience:
+
+```json
+{
+  "weight_skill": 30,
+  "weight_github": 20,
+  "weight_interview": 25,
+  "weight_experience": 20,
+  "weight_integrity": 5
+}
+```
+
+Experience (20%) carries more weight, but skills and interview performance remain critical.
+
+### High-trust roles
+
+Emphasize integrity and consistency:
+
+```json
+{
+  "weight_skill": 25,
+  "weight_github": 25,
+  "weight_interview": 20,
+  "weight_experience": 10,
+  "weight_integrity": 20
+}
+```
+
+Integrity (20%) is weighted equally with GitHub and skills for security-sensitive positions.
+
+### Open source maintainer
+
+Focus on code contributions:
+
+```json
+{
+  "weight_skill": 20,
+  "weight_github": 50,
+  "weight_interview": 15,
+  "weight_experience": 10,
+  "weight_integrity": 5
+}
+```
+
+GitHub activity (50%) dominates since open source work is the primary requirement.
+
+## Recalculating scores
+
+After updating weights, re-run evaluations to recalculate all candidate scores:
+
+```bash
+curl -X POST "https://api.fairmatch.ai/api/jobs/{job_id}/evaluate"
+```
+
+This applies the new weights to all existing candidates and generates fresh evaluation results.
+
+## Understanding component scores
+
+Each weight multiplies a component score calculated by FairMatch AI:
+
+### Skill score (0-100)
+
+Matches candidate skills against job requirements:
+
+```python
+match_analysis = decision_json.get("match_analysis", {})
+skill_score = match_analysis.get("skill_match", 50)
+```
+
+Determined by the Decision Intelligence agent analyzing required_skills vs candidate skills.
+
+### GitHub score (0-100)
+
+Evaluates code quality and contributions:
+
+```python
+if candidate.github_link:
+    github_score = get_agent_score("github", candidate.github_link)
+```
+
+The GitHub Analyst agent reviews repositories, commit history, and code complexity.
+
+### Interview score (0-100)
+
+Assesses interview responses:
+
+```python
+if candidate.interview_answers:
+    combined_text = "Answers: " + " | ".join(candidate.interview_answers)
+    interview_score = get_agent_score("interview", combined_text)
+```
+
+The Interview Grader agent evaluates technical accuracy and communication quality.
+
+### Experience score (0-100)
+
+Compares years of experience against requirements:
+
+```python
+experience_score = match_analysis.get("experience_match", 50)
+```
+
+Scores how well the candidate's experience level matches the job's min_experience requirement.
+
+### Integrity score (0-100)
+
+Measures consistency across data sources:
+
+```python
+integrity_score = match_analysis.get("consistency_score", 50)
+```
+
+Detects discrepancies between resume, GitHub, LinkedIn, and interview data.
+
+## Example calculation
+
+For a candidate applying to a job with these weights:
+
+```json
+{
+  "weight_skill": 40,
+  "weight_github": 30,
+  "weight_interview": 20,
+  "weight_experience": 5,
+  "weight_integrity": 5
+}
+```
+
+Total weight: 100
+
+Component scores:
+- Skill: 85/100
+- GitHub: 78/100
+- Interview: 92/100
+- Experience: 70/100
+- Integrity: 95/100
+
+Final calculation:
+```
+final_score = (85 × 0.40) + (78 × 0.30) + (92 × 0.20) + (70 × 0.05) + (95 × 0.05)
+            = 34.0 + 23.4 + 18.4 + 3.5 + 4.75
+            = 84.05
+            ≈ 84/100
+```
+
+The candidate receives a final score of 84 out of 100.
+
+## Best practices
+
+- **Start with defaults**: Test with default weights (30/25/25/10/10) before customizing
+- **Use whole numbers**: Weights work with any scale, but whole numbers are easier to understand
+- **Consider relative importance**: Focus on the ratio between weights, not absolute values
+- **Re-evaluate after changes**: Always recalculate candidate scores when you adjust weights
+- **Document your strategy**: Keep notes on why you chose specific weights for each role

@@ -1,0 +1,93 @@
+---
+title: Welcome to FairMatch AI
+description: A next-generation applicant tracking system built for speed, fairness, and precision
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="FairMatch AI Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="FairMatch AI Hero Dark"
+/>
+
+## Eliminate hiring bias with AI-powered blind evaluation
+
+FairMatch uses intelligent, multi-agent evaluation pipelines to screen candidates on pure merit, hiding PII to prevent implicit bias. Great candidates no longer get lost in the noise, and companies stop wasting hours manually parsing formatted resumes.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get started with FairMatch AI in minutes
+  </Card>
+  <Card
+    title="How it works"
+    icon="diagram-project"
+    href="/how-it-works"
+  >
+    Learn about our multi-agent evaluation system
+  </Card>
+  <Card
+    title="Key features"
+    icon="star"
+    href="/key-features"
+  >
+    Explore what makes FairMatch unique
+  </Card>
+  <Card
+    title="Register your account"
+    icon="user-plus"
+    href="/api/auth/register"
+  >
+    Create a company or candidate account
+  </Card>
+</CardGroup>
+
+## Why FairMatch?
+
+Traditional hiring processes are plagued by unconscious bias, slow screening times, and inaccurate skill assessments. FairMatch solves these problems through three core innovations:
+
+<AccordionGroup>
+  <Accordion title="Blind evaluation mode">
+    FairMatch masks PII (names, emails, genders) during the evaluation phase so you can rank candidates strictly on their technical scores. No more unconscious bias creeping into your hiring decisions.
+  </Accordion>
+  
+  <Accordion title="Multi-agent AI engine">
+    We utilize a fleet of specialized AI agents running in parallel to generate a comprehensive 360° candidate report. Each agent focuses on what it does best:
+    - Resume Analyst extracts structured data
+    - GitHub Verifier validates technical contributions
+    - Interview Grader assesses responses
+    - Decision Intelligence provides hiring recommendations
+    - Integrity Analyst flags potential fraud
+  </Accordion>
+  
+  <Accordion title="Automated PDF parsing">
+    Rapidly extract structured metadata from uploaded applicant PDFs to feed directly into the AI engine. No more manual data entry or formatting headaches.
+  </Accordion>
+</AccordionGroup>
+
+## Technical stack
+
+FairMatch is built with a modern, decoupled stack designed for scalability:
+
+<CardGroup cols={3}>
+  <Card title="Frontend" icon="react">
+    React + Vite with TypeScript and Tailwind CSS
+  </Card>
+  <Card title="Backend" icon="python">
+    FastAPI with LangChain and Google Gemini AI
+  </Card>
+  <Card title="Database" icon="database">
+    Supabase (PostgreSQL) with real-time sync
+  </Card>
+</CardGroup>
+
+<Note>
+  FairMatch is production-ready with bcrypt password hashing, full API documentation, and instant evaluation results.
+</Note>

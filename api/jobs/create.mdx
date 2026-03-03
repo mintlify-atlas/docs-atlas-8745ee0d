@@ -1,0 +1,174 @@
+---
+title: Create job
+description: Create a new job posting with requirements and evaluation weights
+---
+
+## Create a job
+
+Create a new job posting with the specified requirements, skills, and evaluation criteria.
+
+### Endpoint
+
+```
+POST /api/jobs
+```
+
+### Authentication
+
+This endpoint requires authentication. Include your authentication credentials in the request.
+
+### Request body
+
+<ParamField body="title" type="string" required>
+  The job title for the position.
+</ParamField>
+
+<ParamField body="company_id" type="string">
+  The ID of the company posting this job. Auto-assigned if not provided.
+</ParamField>
+
+<ParamField body="required_skills" type="array" required>
+  List of skills that are required for this position. Each item should be a string representing a skill (e.g., "Python", "React", "PostgreSQL").
+</ParamField>
+
+<ParamField body="preferred_skills" type="array" default="[]">
+  List of skills that are preferred but not required. Each item should be a string.
+</ParamField>
+
+<ParamField body="min_experience" type="integer" default="0">
+  Minimum years of experience required for this position.
+</ParamField>
+
+<ParamField body="openings" type="integer" default="1">
+  Number of open positions for this job.
+</ParamField>
+
+<ParamField body="weight_skill" type="integer" default="30">
+  Weight assigned to skill matching in candidate evaluation (0-100).
+</ParamField>
+
+<ParamField body="weight_github" type="integer" default="25">
+  Weight assigned to GitHub profile evaluation (0-100).
+</ParamField>
+
+<ParamField body="weight_interview" type="integer" default="25">
+  Weight assigned to interview performance (0-100).
+</ParamField>
+
+<ParamField body="weight_experience" type="integer" default="10">
+  Weight assigned to years of experience (0-100).
+</ParamField>
+
+<ParamField body="weight_integrity" type="integer" default="10">
+  Weight assigned to integrity checks (0-100).
+</ParamField>
+
+### Response
+
+Returns the created job object with an auto-generated ID.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the job (8-character UUID).
+</ResponseField>
+
+<ResponseField name="company_id" type="string">
+  The ID of the company that posted this job.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The job title.
+</ResponseField>
+
+<ResponseField name="required_skills" type="array">
+  List of required skills for this position.
+</ResponseField>
+
+<ResponseField name="preferred_skills" type="array">
+  List of preferred skills for this position.
+</ResponseField>
+
+<ResponseField name="min_experience" type="integer">
+  Minimum years of experience required.
+</ResponseField>
+
+<ResponseField name="openings" type="integer">
+  Number of open positions.
+</ResponseField>
+
+<ResponseField name="weight_skill" type="integer">
+  Weight for skill evaluation.
+</ResponseField>
+
+<ResponseField name="weight_github" type="integer">
+  Weight for GitHub evaluation.
+</ResponseField>
+
+<ResponseField name="weight_interview" type="integer">
+  Weight for interview evaluation.
+</ResponseField>
+
+<ResponseField name="weight_experience" type="integer">
+  Weight for experience evaluation.
+</ResponseField>
+
+<ResponseField name="weight_integrity" type="integer">
+  Weight for integrity evaluation.
+</ResponseField>
+
+### Status codes
+
+<ResponseField name="200" type="Success">
+  Job created successfully.
+</ResponseField>
+
+<ResponseField name="400" type="Bad Request">
+  Invalid request body or missing required fields.
+</ResponseField>
+
+<ResponseField name="401" type="Unauthorized">
+  Authentication credentials are missing or invalid.
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  An error occurred while creating the job.
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://api.fairmatch.ai/api/jobs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "company_id": "comp_123",
+    "title": "Senior Full Stack Engineer",
+    "required_skills": ["Python", "React", "PostgreSQL"],
+    "preferred_skills": ["Docker", "AWS", "TypeScript"],
+    "min_experience": 3,
+    "openings": 5,
+    "weight_skill": 30,
+    "weight_github": 25,
+    "weight_interview": 25,
+    "weight_experience": 10,
+    "weight_integrity": 10
+  }'
+```
+
+### Example response
+
+```json
+{
+  "id": "a1b2c3d4",
+  "company_id": "comp_123",
+  "title": "Senior Full Stack Engineer",
+  "required_skills": ["Python", "React", "PostgreSQL"],
+  "preferred_skills": ["Docker", "AWS", "TypeScript"],
+  "min_experience": 3,
+  "openings": 5,
+  "weight_skill": 30,
+  "weight_github": 25,
+  "weight_interview": 25,
+  "weight_experience": 10,
+  "weight_integrity": 10
+}
+```

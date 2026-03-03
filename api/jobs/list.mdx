@@ -1,0 +1,130 @@
+---
+title: List jobs
+description: Retrieve all job postings in the system
+---
+
+## List all jobs
+
+Retrieve a list of all job postings in the FairMatch AI system.
+
+### Endpoint
+
+```
+GET /api/jobs
+```
+
+### Authentication
+
+This endpoint requires authentication. Include your authentication credentials in the request.
+
+### Query parameters
+
+This endpoint does not accept any query parameters.
+
+### Response
+
+Returns an array of job objects.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the job.
+</ResponseField>
+
+<ResponseField name="company_id" type="string">
+  The ID of the company that posted this job.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The job title.
+</ResponseField>
+
+<ResponseField name="required_skills" type="array">
+  List of required skills for this position.
+</ResponseField>
+
+<ResponseField name="preferred_skills" type="array">
+  List of preferred skills for this position.
+</ResponseField>
+
+<ResponseField name="min_experience" type="integer">
+  Minimum years of experience required.
+</ResponseField>
+
+<ResponseField name="openings" type="integer">
+  Number of open positions.
+</ResponseField>
+
+<ResponseField name="weight_skill" type="integer">
+  Weight for skill evaluation in candidate scoring.
+</ResponseField>
+
+<ResponseField name="weight_github" type="integer">
+  Weight for GitHub evaluation in candidate scoring.
+</ResponseField>
+
+<ResponseField name="weight_interview" type="integer">
+  Weight for interview evaluation in candidate scoring.
+</ResponseField>
+
+<ResponseField name="weight_experience" type="integer">
+  Weight for experience evaluation in candidate scoring.
+</ResponseField>
+
+<ResponseField name="weight_integrity" type="integer">
+  Weight for integrity evaluation in candidate scoring.
+</ResponseField>
+
+### Status codes
+
+<ResponseField name="200" type="Success">
+  Jobs retrieved successfully.
+</ResponseField>
+
+<ResponseField name="401" type="Unauthorized">
+  Authentication credentials are missing or invalid.
+</ResponseField>
+
+<ResponseField name="500" type="Internal Server Error">
+  An error occurred while retrieving jobs.
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X GET https://api.fairmatch.ai/api/jobs \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Example response
+
+```json
+[
+  {
+    "id": "a1b2c3d4",
+    "company_id": "comp_123",
+    "title": "Senior Full Stack Engineer",
+    "required_skills": ["Python", "React", "PostgreSQL"],
+    "preferred_skills": ["Docker", "AWS", "TypeScript"],
+    "min_experience": 3,
+    "openings": 5,
+    "weight_skill": 30,
+    "weight_github": 25,
+    "weight_interview": 25,
+    "weight_experience": 10,
+    "weight_integrity": 10
+  },
+  {
+    "id": "e5f6g7h8",
+    "company_id": "comp_456",
+    "title": "Backend Engineer",
+    "required_skills": ["Python", "FastAPI", "PostgreSQL"],
+    "preferred_skills": ["Redis", "Kubernetes"],
+    "min_experience": 2,
+    "openings": 3,
+    "weight_skill": 35,
+    "weight_github": 20,
+    "weight_interview": 20,
+    "weight_experience": 15,
+    "weight_integrity": 10
+  }
+]
+```

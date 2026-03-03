@@ -1,0 +1,106 @@
+---
+title: Register user
+description: Create a new user account for FairMatch AI
+---
+
+## POST /api/auth/register
+
+Create a new user account in the FairMatch AI system. This endpoint registers either a company or candidate user.
+
+### Authentication
+
+No authentication required.
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Full name of the user
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Email address for the user account. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User password. Will be hashed using bcrypt before storage. Maximum 72 bytes.
+</ParamField>
+
+<ParamField body="role" type="enum" required>
+  User role type. Available values:
+  - `company` - For hiring companies
+  - `candidate` - For job seekers
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique 8-character user identifier generated on registration
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Full name of the registered user
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Email address of the registered user
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  Role assigned to the user (`company` or `candidate`)
+</ResponseField>
+
+### Example request
+
+```bash
+curl -X POST https://api.fairmatch.ai/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "password": "securePassword123",
+    "role": "candidate"
+  }'
+```
+
+```json
+{
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "password": "securePassword123",
+  "role": "candidate"
+}
+```
+
+### Example response
+
+```json
+{
+  "id": "a3f8c2d1",
+  "name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "role": "candidate"
+}
+```
+
+### Status codes
+
+<ResponseField name="200" type="Success">
+  User successfully registered
+</ResponseField>
+
+<ResponseField name="400" type="Error">
+  Email already registered
+  
+  ```json
+  {
+    "detail": "Email already registered"
+  }
+  ```
+</ResponseField>
+
+### Implementation details
+
+- User IDs are generated as 8-character UUID prefixes
+- Passwords are truncated to 72 bytes before bcrypt hashing
+- Password hashes are stored in the database, not plaintext passwords
+- Email uniqueness is validated before account creation

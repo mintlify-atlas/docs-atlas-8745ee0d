@@ -1,0 +1,148 @@
+---
+title: Bulk import candidates
+description: Import multiple candidates at once via CSV/Excel files
+---
+
+## Overview
+
+You can import hundreds of candidates at once using Excel files (.xlsx). The bulk import endpoint validates your data, extracts candidate information, and creates all records in a single operation.
+
+## Import from Excel
+
+### Prepare your file
+
+Create an Excel file with these required columns:
+
+- `name` - Full name of the candidate
+- `email` - Email address
+- `skills` - Comma-separated list of skills
+- `experience` - Years of experience (number)
+
+Optional columns you can include:
+
+- `projects` - Description of past projects
+- `resume_text` - Resume content or summary
+- `github_link` - GitHub profile URL
+- `linkedin_link` - LinkedIn profile URL
+
+### Upload via API
+
+<Steps>
+  <Step title="Prepare your Excel file">
+    Ensure all required columns are present with valid data. Empty rows will be skipped automatically.
+  </Step>
+  
+  <Step title="Send POST request">
+    Upload the file to the import endpoint:
+
+    ```bash
+    curl -X POST "https://api.fairmatch.ai/api/jobs/{job_id}/import_excel" \
+      -H "Content-Type: multipart/form-data" \
+      -F "file=@candidates.xlsx"
+    ```
+  </Step>
+  
+  <Step title="Verify import">
+    The API returns an array of all imported candidates with their assigned IDs:
+
+    ```json
+    [
+      {
+        "id": "a3f7b2c1",
+        "job_id": "job123",
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "skills": ["Python", "React", "PostgreSQL"],
+        "experience": 5,
+        "projects": "",
+        "resume_text": ""
+      }
+    ]
+    ```
+  </Step>
+</Steps>
+
+## How it works
+
+The import endpoint processes your Excel file in these stages:
+
+### 1. File validation
+
+```python
+if not file.filename.endswith('.xlsx'):
+    raise HTTPException(status_code=400, detail="Only .xlsx files are supported")
+```
+
+Only `.xlsx` files are accepted. CSV files must be converted to Excel format first.
+
+### 2. Column validation
+
+```python
+required_cols = ['name', 'email', 'skills', 'experience']
+missing_cols = [col for col in required_cols if col not in df.columns]
+if missing_cols:
+    raise HTTPException(status_code=400, detail=f"Missing columns: {', '.join(missing_cols)}")
+```
+
+The endpoint checks that all required columns exist before processing any rows.
+
+### 3. Row processing
+
+```python
+for _, row in df.iterrows():
+    # Skip empty rows
+    if pd.isna(row['name']) or pd.isna(row['email']):
+        continue
+    
+    # Parse skills (can be comma-separated)
+    skills = []
+    if isinstance(row['skills'], str):
+        skills = [s.strip() for s in str(row['skills']).split(',')]
+    
+    candidate = Candidate(
+        id=str(uuid.uuid4())[:8],
+        job_id=job_id,
+        name=str(row['name']).strip(),
+        email=str(row['email']).strip(),
+        skills=skills,
+        experience=int(row['experience']) if pd.notna(row['experience']) else 0,
+        projects=str(row.get('projects', '')).strip() or '',
+        resume_text=str(row.get('resume_text', '')).strip() or ''
+    )
+```
+
+Each row is converted to a `Candidate` object. Skills are automatically split by commas, and empty values are handled gracefully.
+
+### 4. Batch insertion
+
+```python
+if insert_data:
+    supabase.table("candidates").insert(insert_data).execute()
+```
+
+All candidates are inserted in a single database transaction for optimal performance.
+
+## Sample Excel template
+
+Here's an example of a properly formatted Excel file:
+
+| name | email | skills | experience | projects |
+|------|-------|--------|------------|----------|
+| John Doe | john@example.com | Python, React, Docker | 3 | E-commerce platform, Analytics dashboard |
+| Jane Smith | jane@example.com | Java, Spring, AWS | 5 | Payment gateway, Microservices architecture |
+| Bob Johnson | bob@example.com | JavaScript, Node.js, MongoDB | 2 | Real-time chat app |
+
+## Error handling
+
+The endpoint returns specific error messages for common issues:
+
+- **Invalid file type**: "Only .xlsx files are supported"
+- **Missing columns**: "Missing columns: name, email"
+- **Processing errors**: "Error importing Excel file: (error details)"
+
+## Best practices
+
+- **Validate data first**: Check that all emails are valid and skills are correctly formatted before uploading
+- **Use consistent formatting**: Keep skill names consistent across all rows (e.g., "JavaScript" vs "javascript")
+- **Include optional fields**: Add `projects` and `resume_text` for better evaluation results
+- **Test with small batches**: Try importing 5-10 candidates first to verify your format

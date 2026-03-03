@@ -1,122 +1,126 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "FairMatch AI",
+  "theme": "almond",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6366f1",
+    "light": "#818cf8",
+    "dark": "#4f46e5"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/PriyanshuAgarwal1407/FairMatch-AI"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/PriyanshuAgarwal1407/FairMatch-AI"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Overview",
             "pages": [
-              "index",
+              "introduction",
+              "how-it-works",
+              "key-features"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
               "quickstart",
-              "development"
+              "installation",
+              "configuration"
             ]
           },
           {
-            "group": "Customization",
+            "group": "For Companies",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "companies/creating-jobs",
+              "companies/managing-candidates",
+              "companies/running-evaluations",
+              "companies/blind-review-mode"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "For Candidates",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "candidates/creating-profile",
+              "candidates/applying-to-jobs",
+              "candidates/ai-interview"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "AI Evaluation System",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "ai-system/multi-agent-architecture",
+              "ai-system/resume-analysis",
+              "ai-system/github-verification",
+              "ai-system/interview-grading",
+              "ai-system/integrity-checks"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/bulk-import",
+              "advanced/fraud-detection",
+              "advanced/custom-weights"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Authentication",
             "pages": [
-              "api-reference/introduction"
+              "api/auth/register",
+              "api/auth/login"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Jobs",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/jobs/create",
+              "api/jobs/list",
+              "api/jobs/get",
+              "api/jobs/update",
+              "api/jobs/delete"
+            ]
+          },
+          {
+            "group": "Candidates",
+            "pages": [
+              "api/candidates/create",
+              "api/candidates/list",
+              "api/candidates/get",
+              "api/candidates/update"
+            ]
+          },
+          {
+            "group": "Evaluations",
+            "pages": [
+              "api/evaluations/run",
+              "api/evaluations/get-results"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/parse-resume",
+              "api/utilities/bulk-import"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

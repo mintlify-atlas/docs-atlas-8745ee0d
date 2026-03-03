@@ -1,0 +1,326 @@
+---
+title: Key features
+description: What makes FairMatch AI the future of fair hiring
+---
+
+## Core features
+
+FairMatch combines cutting-edge AI technology with practical hiring tools to create a truly unbiased recruitment platform.
+
+<CardGroup cols={2}>
+  <Card title="Blind evaluation mode" icon="eye-slash">
+    Toggle to hide all candidate PII during evaluation. Names become "Candidate ID-1234" to eliminate unconscious bias.
+  </Card>
+  
+  <Card title="Multi-agent AI system" icon="users-gear">
+    Five specialized agents work in parallel to evaluate resumes, GitHub profiles, interviews, and fraud risk.
+  </Card>
+  
+  <Card title="Adaptive fraud detection" icon="shield-halved">
+    Automatically spawns integrity checks when score discrepancies exceed 30 points between GitHub and interview evaluations.
+  </Card>
+  
+  <Card title="Real-time evaluation" icon="bolt">
+    Get instant candidate rankings with comprehensive 360° reports including strengths, weaknesses, and risk levels.
+  </Card>
+  
+  <Card title="Bulk candidate import" icon="file-import">
+    Upload CSV or Excel files with 50+ candidates at once. Auto-enriches profiles from GitHub and LinkedIn.
+  </Card>
+  
+  <Card title="Automated PDF parsing" icon="file-pdf">
+    Extract structured data from resume PDFs using PyMuPDF with automatic field mapping.
+  </Card>
+  
+  <Card title="Custom weight configuration" icon="sliders">
+    Define your own scoring weights for skills, GitHub, interviews, experience, and integrity checks.
+  </Card>
+  
+  <Card title="Production-ready security" icon="lock">
+    Bcrypt password hashing, JWT-ready architecture, environment variable configuration, and CORS protection.
+  </Card>
+</CardGroup>
+
+## Blind evaluation mode
+
+Our flagship feature for eliminating hiring bias. When enabled, the dashboard replaces all identifying information with anonymized IDs.
+
+<Tabs>
+  <Tab title="Standard mode">
+    ```json
+    {
+      "name": "Alice Johnson",
+      "email": "alice.johnson@gmail.com",
+      "final_score": 87,
+      "recommendation": "Interview"
+    }
+    ```
+  </Tab>
+  <Tab title="Blind mode">
+    ```json
+    {
+      "name": "Candidate ID-4a7b",
+      "email": "[HIDDEN]",
+      "final_score": 87,
+      "recommendation": "Interview"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  PII is only revealed after initial ranking decisions are made, ensuring merit-based evaluation.
+</Info>
+
+## Multi-agent evaluation pipeline
+
+Each agent specializes in a specific dimension of candidate assessment:
+
+### Resume Analyst
+
+Extracts and structures candidate data from raw text or PDFs.
+
+**Returns:**
+- Name and contact information
+- List of technical skills
+- Years of experience
+- Project summaries
+
+```python
+from ai_engine import get_resume_intelligence
+
+resume_data = get_resume_intelligence(resume_text)
+print(resume_data)
+# Output: {"name": "...", "email": "...", "experience": 5, "skills": [...]}
+```
+
+### GitHub Verifier
+
+Analyzes GitHub profiles for code quality, contribution consistency, and project complexity.
+
+**Returns:**
+- GitHub score (0-100)
+- List of top projects with descriptions
+- Public email if available
+
+```python
+from ai_engine import get_github_intelligence
+
+github_data = get_github_intelligence("https://github.com/username")
+print(github_data)
+# Output: {"score": 85, "projects": "...", "email": "dev@example.com"}
+```
+
+### Interview Grader
+
+Evaluates interview responses for technical depth and communication clarity.
+
+**Input:** Combined interview answers
+
+**Output:** Interview score (0-100)
+
+### Decision Intelligence
+
+Provides comprehensive analysis and hiring recommendations.
+
+**Returns:**
+- Skill match score
+- Experience match score
+- Consistency score
+- Bias analysis
+- Final recommendation (consider/interview/reject)
+- Risk factors and fairness notes
+
+```python
+from ai_engine import get_decision_intelligence
+
+decision = get_decision_intelligence(combined_query)
+print(decision["final_decision"]["recommendation"])  # "interview"
+print(decision["match_analysis"]["skill_match"])    # 87
+```
+
+### Integrity Analyst
+
+Detects potential resume fraud and score manipulation.
+
+**Triggered when:** `abs(github_score - interview_score) > 30`
+
+**Returns:**
+- Fraud probability (0-100)
+- Investigation notes
+- Penalty score
+
+```python
+if abs(github_score - interview_score) > 30:
+    fraud_query = f"GitHub Score: {github_score}\nInterview Score: {interview_score}"
+    integrity_result = get_integrity_intelligence(fraud_query)
+    penalty = integrity_result.get("penalty_score", 0)
+    final_score -= penalty
+```
+
+<Warning>
+  High penalty scores can significantly impact final rankings. Ensure candidates provide accurate information.
+</Warning>
+
+## Automated resume parsing
+
+FairMatch automatically extracts text from PDF resumes using PyMuPDF:
+
+```python
+import fitz  # PyMuPDF
+
+@app.post("/api/extract-resume")
+async def extract_resume_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    doc = fitz.open(stream=content, filetype="pdf")
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return {"text": text}
+```
+
+<Note>
+  The extracted text is then passed to the Resume Analyst agent for structured data extraction.
+</Note>
+
+## Bulk import with agent enrichment
+
+Import 50+ candidates from Excel and automatically enrich their profiles:
+
+```python
+@app.post("/api/seed-sample-data")
+def seed_sample_data():
+    df = pd.read_excel("AgentX_Sample_DataSet.xlsx", engine='openpyxl')
+    
+    for _, row in df.iterrows():
+        name = row.get('Name')
+        github_link = row.get('github')
+        
+        # Agent enrichment
+        resume_intel = get_resume_intelligence(resume_text)
+        github_intel = get_github_intelligence(github_link)
+        
+        candidate = Candidate(
+            name=resume_intel.get("name") or name,
+            email=github_intel.get("email") or row.get('email'),
+            skills=resume_intel.get("skills"),
+            experience=resume_intel.get("experience"),
+            projects=github_intel.get("projects")
+        )
+        
+        candidates.append(candidate)
+```
+
+## Custom scoring weights
+
+Companies can customize how different factors influence the final score:
+
+```python
+class JobRequirement:
+    title: str
+    required_skills: List[str]
+    preferred_skills: List[str]
+    min_experience: int
+    
+    # Configurable weights
+    weight_skill: int = 30
+    weight_github: int = 25
+    weight_interview: int = 20
+    weight_experience: int = 15
+    weight_integrity: int = 10
+```
+
+<Tip>
+  For senior engineering roles, increase `weight_github` to emphasize code quality. For junior roles, increase `weight_interview` to focus on potential.
+</Tip>
+
+## API documentation
+
+FairMatch provides comprehensive OpenAPI documentation at `/docs`:
+
+**Authentication endpoints:**
+- `POST /api/auth/register` - Create a new user account
+- `POST /api/auth/login` - Authenticate existing user
+
+**Job management:**
+- `GET /api/jobs` - List all job postings
+- `POST /api/jobs` - Create a new job
+- `PUT /api/jobs/{job_id}` - Update job details
+
+**Candidate management:**
+- `GET /api/jobs/{job_id}/candidates` - Get all candidates for a job
+- `POST /api/jobs/{job_id}/apply` - Submit candidate application
+- `POST /api/jobs/{job_id}/import_excel` - Bulk import from Excel
+
+**Evaluation:**
+- `POST /api/jobs/{job_id}/evaluate` - Run multi-agent evaluation
+- `GET /api/jobs/{job_id}/evaluations` - Get evaluation results
+
+```bash
+# Example: Run evaluation for a job
+curl -X POST "http://localhost:8000/api/jobs/abc123/evaluate" \
+  -H "Content-Type: application/json"
+```
+
+<Info>
+  All endpoints return structured JSON responses with proper error handling and HTTP status codes.
+</Info>
+
+## Security features
+
+FairMatch implements production-grade security measures:
+
+### Password hashing
+
+```python
+import bcrypt
+
+# Registration
+password_bytes = user.password.encode('utf-8')[:72]
+hashed_password = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+
+# Login verification
+if bcrypt.checkpw(password_bytes, stored_hash.encode('utf-8')):
+    return UserResponse(id=user_id, name=name, email=email)
+```
+
+### Environment variable configuration
+
+```bash
+# .env file
+SUPABASE_URL="your-supabase-url"
+SUPABASE_KEY="your-supabase-key"
+GEMINI_API_KEY="your-gemini-key"
+ZYND_API_KEY="your-zynd-key"
+```
+
+### CORS protection
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Configure for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+<Warning>
+  Never commit `.env` files to version control. Use `.env.example` as a template.
+</Warning>
+
+## Real-time dashboard
+
+The frontend provides a beautiful, responsive interface with:
+
+- Dark mode toggle
+- Glassmorphism design aesthetics
+- Radar charts for skill visualization
+- Real-time evaluation progress
+- Candidate filtering and sorting
+- Export functionality
+
+<Note>
+  Built with React, Vite, TypeScript, and Tailwind CSS for optimal performance.
+</Note>

@@ -1,0 +1,304 @@
+---
+title: GitHub verification
+description: Learn how FairMatch verifies GitHub profiles and analyzes code quality using API data and web scraping fallbacks.
+---
+
+## Overview
+
+The GitHub Analyst agent verifies candidate GitHub profiles, calculates a quality score from 0-100, and extracts project information. It combines GitHub API data with web scraping fallbacks to ensure reliable results even when rate limits are hit.
+
+## Agent configuration
+
+The GitHub Analyst registers on the ZyndAI network with code analysis capabilities:
+
+```python backend/agents/github_agent.py
+agent_config = AgentConfig(
+    name="FairMatch GitHub Analyst",
+    description="Analyzes GitHub profiles to verify authenticity and skill alignment. Returns a score 0-100.",
+    capabilities={
+        "ai": ["code_analysis", "profile_verification"],
+        "protocols": ["http"],
+        "services": ["github_eval"]
+    },
+    webhook_host="0.0.0.0",
+    webhook_port=5001,
+    registry_url="https://registry.zynd.ai",
+    api_key=os.environ.get("ZYND_API_KEY", ""),
+    config_dir=".agent-github"
+)
+
+agent = ZyndAIAgent(agent_config=agent_config)
+```
+
+## Scoring algorithm
+
+The `github_verifier.py` module implements the core scoring logic:
+
+```python backend/github_verifier.py
+def verify_github(github_link: str) -> dict:
+    result = {"score": 40, "projects": ""}
+    if not github_link or "github.com/" not in github_link:
+        result["score"] = 0
+        return result
+    
+    username = github_link.strip().rstrip('/').split('/')[-1]
+    safe_username = urllib.parse.quote(username)
+    score = 0
+    
+    try:
+        url = f"https://api.github.com/users/{safe_username}"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            public_repos = data.get("public_repos", 0)
+            followers = data.get("followers", 0)
+            created_at = data.get("created_at")
+            
+            # Base score for valid profile
+            score += 30
+            
+            # Repository contribution
+            score += min(public_repos * 1.5, 30)
+            
+            # Community engagement
+            score += min(followers * 2, 20)
+            
+            # Account age bonus
+            if created_at:
+                age = datetime.now().year - int(created_at[:4])
+                score += min(age * 2, 10)
+```
+
+### Scoring components
+
+| Component | Weight | Max Points | Calculation |
+|-----------|--------|------------|-------------|
+| Valid profile | Base | 30 | Profile exists and is accessible |
+| Public repositories | 1.5 per repo | 30 | `min(public_repos * 1.5, 30)` |
+| Followers | 2 per follower | 20 | `min(followers * 2, 20)` |
+| Account age | 2 per year | 10 | `min(age * 2, 10)` |
+| Active projects | Bonus | 10 | Awarded if repos have recent commits |
+
+<Info>
+The maximum score is capped at 100. A profile with 20+ repos, 10+ followers, and a 5+ year history will achieve a near-perfect score.
+</Info>
+
+## Project extraction
+
+The agent fetches the candidate's top 5 most recently updated repositories:
+
+```python backend/github_verifier.py
+# Fetch repos for real project data
+repos_url = f"https://api.github.com/users/{safe_username}/repos?sort=updated&per_page=5"
+repo_res = requests.get(repos_url, timeout=5)
+
+projects_list = []
+if repo_res.status_code == 200:
+    repos = repo_res.json()
+    if len(repos) > 0:
+        score += 10  # Bonus for having projects
+        for r in repos:
+            desc = r.get('description') or "No description"
+            projects_list.append(f"{r.get('name')}: {desc}")
+
+result["score"] = int(min(100, score))
+result["projects"] = " | ".join(projects_list)
+```
+
+## Message handler
+
+The agent receives GitHub URLs and returns structured JSON:
+
+```python backend/agents/github_agent.py
+def handler(message: AgentMessage, topic: str):
+    print(f"Received request to analyze: {message.content}")
+    github_url = message.content.strip()
+    
+    # Try via API first
+    result = verify_github(github_url) if github_url else {"score": 0, "projects": ""}
+    
+    score_val = result.get("score", 0)
+    try:
+        score_val = int(score_val)
+    except (ValueError, TypeError):
+        score_val = 0
+```
+
+## Web scraping fallback
+
+When the GitHub API is rate-limited or returns low scores, the agent falls back to web scraping:
+
+```python backend/agents/github_agent.py
+if score_val <= 40 or not result.get("projects"):
+    print(f"API Rate Limited? Attempting scraping fallback for {github_url}...")
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(github_url, headers=headers, timeout=10)
+        
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            
+            # Extract Bio
+            bio_tag = soup.find('div', class_='p-note user-profile-bio')
+            bio = bio_tag.get_text(strip=True) if bio_tag else "No bio found"
+            
+            # Extract Top Repos
+            repos = []
+            repo_tags = soup.find_all('span', class_='repo')[:5]
+            for r in repo_tags:
+                parent = r.find_parent('div', class_='pinned-item-list-item-content')
+                desc = "Portfolio Project"
+                if parent:
+                    desc_tag = parent.find('p', class_='pinned-item-desc')
+                    if desc_tag: desc = desc_tag.get_text(strip=True)
+                repos.append(f"{r.get_text(strip=True)}: {desc}")
+            
+            if repos:
+                result["projects"] = " | ".join(repos)
+                result["score"] = max(result["score"], 60)
+            
+            # Extract Email (if public)
+            email_tag = soup.find('a', class_='u-email')
+            if email_tag:
+                result["email"] = email_tag.get_text(strip=True)
+    except Exception as e:
+        print(f"Scraping fallback failed: {e}")
+```
+
+<Note>
+The scraping fallback provides a minimum score of 60 when it successfully extracts pinned repositories. This prevents false negatives for legitimate profiles that hit API rate limits.
+</Note>
+
+## Response format
+
+The agent returns a JSON object with score, projects, and optionally email:
+
+```json
+{
+  "score": 85,
+  "projects": "awesome-ai-tool: Machine learning framework for text analysis | web-portfolio: Personal portfolio built with React and TypeScript | api-gateway: Microservices API gateway with authentication",
+  "email": "developer@example.com"
+}
+```
+
+## How the orchestrator uses GitHub data
+
+The orchestrator has two methods for querying the GitHub Analyst:
+
+### Simple score query
+
+```python backend/ai_engine.py
+github_score = 0
+if candidate.github_link:
+    github_score = get_agent_score("github", candidate.github_link)
+```
+
+### Full intelligence query
+
+```python backend/ai_engine.py
+def get_github_intelligence(github_link: str) -> dict:
+    fallback = {"score": 0, "projects": "", "email": ""}
+    if not orchestrator or not github_link: return fallback
+
+    try:
+        agents = orchestrator.search_agents_by_keyword("FairMatch GitHub Analyst")
+        if not agents: return fallback
+        target = agents[0]
+        msg = AgentMessage(
+            content=github_link,
+            sender_id=orchestrator.agent_id,
+            message_type="query",
+            sender_did=orchestrator.identity_credential
+        )
+        sync_url = str(target.get('httpWebhookUrl', '')).replace('/webhook', '/webhook/sync')
+        response = orchestrator.x402_processor.post(sync_url, json=msg.to_dict(), timeout=90)
+        if response.status_code == 200:
+            resp_str = response.json().get('response', '{}')
+            try:
+                if resp_str.startswith("```json"): resp_str = resp_str[7:-3].strip()
+                return json.loads(resp_str)
+            except:
+                # Fallback to score extraction if not json
+                score = min(100, max(0, int(''.join(filter(str.isdigit, str(resp_str))))))
+                return {"score": score, "projects": "", "email": ""}
+        return fallback
+    except Exception: return fallback
+```
+
+## Error handling
+
+The GitHub verifier gracefully handles invalid URLs and API failures:
+
+```python backend/github_verifier.py
+def verify_github(github_link: str) -> dict:
+    result = {"score": 40, "projects": ""}
+    if not github_link or "github.com/" not in github_link:
+        result["score"] = 0
+        return result
+    
+    try:
+        # API logic here
+        return result
+    except Exception:
+        return result  # Return default score
+```
+
+<Info>
+Invalid or missing GitHub links receive a score of 0. Network errors or timeouts return a score of 40, which represents "unable to verify" rather than "definitely bad."
+</Info>
+
+## Username extraction
+
+The agent safely extracts usernames from various GitHub URL formats:
+
+```python backend/github_verifier.py
+username = github_link.strip().rstrip('/').split('/')[-1]
+safe_username = urllib.parse.quote(username)
+```
+
+This handles:
+- `https://github.com/username`
+- `https://github.com/username/`
+- `github.com/username`
+- `http://github.com/username`
+
+## Running the agent
+
+```python backend/agents/github_agent.py
+if __name__ == "__main__":
+    if not os.environ.get("ZYND_API_KEY") or os.environ.get("ZYND_API_KEY") == "REPLACE_ME_WITH_ZYND_API_KEY":
+        print("ERROR: ZYND_API_KEY is not set. Please set it in .env")
+        sys.exit(1)
+    
+    print(f"FairMatch GitHub Analyst Agent running at {agent.webhook_url}")
+    print(f"Price: {agent_config.price} per request")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down...")
+```
+
+## Environment variables
+
+```bash
+ZYND_API_KEY=your_zynd_api_key_here
+```
+
+Unlike other agents, the GitHub Analyst doesn't require a `GEMINI_API_KEY` because it uses GitHub's API and web scraping instead of LLM processing.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Interview grading" icon="comments" href="/ai-system/interview-grading">
+    See how interview scores complement GitHub verification
+  </Card>
+  <Card title="Integrity checks" icon="shield" href="/ai-system/integrity-checks">
+    Learn how discrepancies trigger fraud detection
+  </Card>
+</CardGroup>
