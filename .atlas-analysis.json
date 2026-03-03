@@ -1,0 +1,141 @@
+{
+  "projectType": "saas",
+  "projectName": "FairMatch AI",
+  "projectDescription": "Bias-free AI-powered candidate evaluation platform that uses multi-agent evaluation pipelines to screen candidates on pure merit.",
+  "theme": "almond",
+  "primaryColor": "#6366f1",
+  "lightColor": "#818cf8",
+  "darkColor": "#4f46e5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "how-it-works",
+              "key-features"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "quickstart",
+              "installation",
+              "configuration"
+            ]
+          },
+          {
+            "group": "For Companies",
+            "pages": [
+              "companies/creating-jobs",
+              "companies/managing-candidates",
+              "companies/running-evaluations",
+              "companies/blind-review-mode"
+            ]
+          },
+          {
+            "group": "For Candidates",
+            "pages": [
+              "candidates/creating-profile",
+              "candidates/applying-to-jobs",
+              "candidates/ai-interview"
+            ]
+          },
+          {
+            "group": "AI Evaluation System",
+            "pages": [
+              "ai-system/multi-agent-architecture",
+              "ai-system/resume-analysis",
+              "ai-system/github-verification",
+              "ai-system/interview-grading",
+              "ai-system/integrity-checks"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/bulk-import",
+              "advanced/fraud-detection",
+              "advanced/custom-weights"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/register",
+              "api/auth/login"
+            ]
+          },
+          {
+            "group": "Jobs",
+            "pages": [
+              "api/jobs/create",
+              "api/jobs/list",
+              "api/jobs/get",
+              "api/jobs/update",
+              "api/jobs/delete"
+            ]
+          },
+          {
+            "group": "Candidates",
+            "pages": [
+              "api/candidates/create",
+              "api/candidates/list",
+              "api/candidates/get",
+              "api/candidates/update"
+            ]
+          },
+          {
+            "group": "Evaluations",
+            "pages": [
+              "api/evaluations/run",
+              "api/evaluations/get-results"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/utilities/parse-resume",
+              "api/utilities/bulk-import"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Blind evaluation mode to eliminate unconscious bias",
+    "Multi-agent AI evaluation system with specialized agents",
+    "Automated PDF resume parsing and data extraction",
+    "GitHub profile verification and analysis",
+    "AI-powered interview question generation and grading",
+    "Adaptive fraud detection and integrity checks",
+    "Bulk candidate import via CSV/Excel",
+    "Real-time evaluation dashboards with analytics"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "POST /api/jobs",
+    "GET /api/jobs",
+    "GET /api/jobs/{job_id}",
+    "PUT /api/jobs/{job_id}",
+    "DELETE /api/jobs/{job_id}",
+    "POST /api/jobs/{job_id}/candidates",
+    "GET /api/jobs/{job_id}/candidates",
+    "POST /api/jobs/{job_id}/evaluate",
+    "GET /api/candidates/{candidate_id}",
+    "PUT /api/candidates/{candidate_id}",
+    "POST /api/parse-resume",
+    "POST /api/jobs/{job_id}/import_excel",
+    "GET /api/evaluations/{job_id}"
+  ]
+}
